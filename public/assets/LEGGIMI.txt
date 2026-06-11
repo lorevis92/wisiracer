@@ -1,0 +1,17 @@
+Metti qui le immagini e i video del gioco (nomi esatti, minuscoli):
+
+IMMAGINI (obbligatorie per la grafica fotografica)
+  ship.png          -> navicella vista ESATTAMENTE da dietro.
+                       Meglio PNG con sfondo TRASPARENTE.
+                       (se ha sfondo pieno, il gioco prova a rimuoverlo da solo)
+  pilot.png         -> ritratto del pilota (quadrato), va nell'HUD e nel menu
+  bg_nebula.png     -> sfondo del circuito Nebula Run (nebulosa)
+  bg_ringworld.png  -> sfondo del circuito Ring World (pianeta con anelli)
+
+VIDEO (opzionali, generati con Higgsfield - mp4 H.264, 16:9, 5-10 secondi)
+  intro_nebula.mp4     -> video pre-gara Nebula Run
+  outro_nebula.mp4     -> video fine gara Nebula Run
+  intro_ringworld.mp4  -> video pre-gara Ring World
+  outro_ringworld.mp4  -> video fine gara Ring World
+
+Qualsiasi file mancante = il gioco usa la grafica procedurale / salta il video.
