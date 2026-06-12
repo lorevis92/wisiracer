@@ -697,7 +697,7 @@ function initGame(container, cfg, ui) {
     /* --- giocatore --- */
     if (player.alive && racing) {
       const ctrl = phase === "race" && !player.finished;
-      const st = ctrl ? (keys.right ? 1 : 0) - (keys.left ? 1 : 0) : 0;
+      const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
       const pt = ctrl ? (keys.up ? 1 : 0) - (keys.down ? 1 : 0) : 0;
       player.yawVel += ((-st * 1.75) - player.yawVel) * Math.min(1, dt * 7);
       player.yaw += player.yawVel * dt;
@@ -1207,10 +1207,13 @@ export default function WisiRacer() {
   const [vids, setVids] = useState({});
   const mountRef = useRef(null);
   const mapRef = useRef(null);
-  const keysRef = useRef({ left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0 });
+  const keysRef = useRef({ left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
   const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
+  const gyroRef = useRef({ filteredBeta: null, betaRef: null, calibSamples: [], calibDone: false, calibStart: null });
+  const gyroEnabledRef = useRef(false);
+  const [gyroActive, setGyroActive] = useState(false);
 
   // Preloader automatico: cerca gli asset in /assets e usa quelli che trova
   useEffect(() => {
@@ -1248,6 +1251,8 @@ export default function WisiRacer() {
   useEffect(() => {
     if (screen !== "race") return;
     Object.keys(keysRef.current).forEach(k => (keysRef.current[k] = 0));
+    keysRef.current.gyroActive = false;
+    keysRef.current.gyroSteer = 0;
     const ui = {
       onHud: h => setHud(h),
       onMsg: m => {
@@ -1271,7 +1276,56 @@ export default function WisiRacer() {
       track: trackKey, mode: modeKey, diff: diffKey, keys: keysRef.current,
       assets: { ship: assetsRef.current.ship, bg: assetsRef.current.bgs ? assetsRef.current.bgs[trackKey] : null },
     }, ui);
-    return () => { cleanup(); clearTimeout(msgTimer.current); clearTimeout(exprTimer.current); };
+
+    let gyroCleanup = null;
+    if (isTouch && gyroEnabledRef.current) {
+      const gyro = gyroRef.current;
+      gyro.filteredBeta = null;
+      gyro.betaRef = null;
+      gyro.calibSamples = [];
+      gyro.calibDone = false;
+      gyro.calibStart = null;
+
+      const onOrientation = (e) => {
+        if (e.beta === null) return;
+        const now = performance.now() / 1000;
+        if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
+        gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
+        if (!gyro.calibDone) {
+          if (gyro.calibStart === null) gyro.calibStart = now;
+          gyro.calibSamples.push(gyro.filteredBeta);
+          if (now - gyro.calibStart >= 2) {
+            gyro.betaRef = gyro.calibSamples.reduce((a, b) => a + b, 0) / gyro.calibSamples.length;
+            gyro.calibDone = true;
+          }
+        }
+        const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
+        const DEAD = 4, MAX = 26;
+        let steer = 0;
+        if (Math.abs(tilt) > DEAD) {
+          steer = Math.max(-1, Math.min(1, (Math.abs(tilt) - DEAD) / (MAX - DEAD))) * Math.sign(tilt);
+        }
+        keysRef.current.gyroSteer = steer;
+      };
+
+      window.addEventListener("deviceorientation", onOrientation);
+      keysRef.current.gyroActive = true;
+      setGyroActive(true);
+
+      gyroCleanup = () => {
+        window.removeEventListener("deviceorientation", onOrientation);
+        keysRef.current.gyroActive = false;
+        keysRef.current.gyroSteer = 0;
+        setGyroActive(false);
+      };
+    }
+
+    return () => {
+      cleanup();
+      if (gyroCleanup) gyroCleanup();
+      clearTimeout(msgTimer.current);
+      clearTimeout(exprTimer.current);
+    };
   }, [screen]);
 
   // minimappa
@@ -1296,6 +1350,24 @@ export default function WisiRacer() {
     onPointerLeave: () => { keysRef.current[k] = 0; },
     onContextMenu: e => e.preventDefault(),
   });
+
+  const startRace = async () => {
+    if (isTouch && typeof DeviceOrientationEvent !== "undefined") {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        try {
+          const perm = await DeviceOrientationEvent.requestPermission();
+          gyroEnabledRef.current = perm === "granted";
+        } catch (e) {
+          gyroEnabledRef.current = false;
+        }
+      } else {
+        gyroEnabledRef.current = true;
+      }
+    }
+    setResults(null);
+    const v = vids[trackKey];
+    setScreen(v && v.intro ? "intro" : "race");
+  };
 
   const playerRow = results && results.find(r => r.isPlayer);
 
@@ -1367,7 +1439,7 @@ export default function WisiRacer() {
           </div>
 
           <div style={{ height: 26 }} />
-          <button className="wr-btn" onClick={() => { setResults(null); const v = vids[trackKey]; setScreen(v && v.intro ? "intro" : "race"); }}>VIA ALLA GARA 🚀</button>
+          <button className="wr-btn" onClick={startRace}>VIA ALLA GARA 🚀</button>
           <div style={{ height: 18 }} />
           <p className="wr-hint">
             ⌨ Frecce / WASD: vira e cabra · SHIFT: boost · SPAZIO: laser · X: freno · ESC: pausa · M: audio on/off
@@ -1443,13 +1515,15 @@ export default function WisiRacer() {
             )}
 
             {isTouch && (
-              <div className="wr-touch">
-                <div style={{ display: "grid", gridTemplateColumns: "62px 62px 62px", gap: 8, pointerEvents: "auto" }}>
-                  <div /><div className="wr-tbtn" {...touch("up")}>▲</div><div />
-                  <div className="wr-tbtn" {...touch("left")}>◀</div>
-                  <div className="wr-tbtn" {...touch("down")}>▼</div>
-                  <div className="wr-tbtn" {...touch("right")}>▶</div>
-                </div>
+              <div className="wr-touch" style={{ justifyContent: gyroActive ? "flex-end" : "space-between" }}>
+                {!gyroActive && (
+                  <div style={{ display: "grid", gridTemplateColumns: "62px 62px 62px", gap: 8, pointerEvents: "auto" }}>
+                    <div /><div className="wr-tbtn" {...touch("up")}>▲</div><div />
+                    <div className="wr-tbtn" {...touch("left")}>◀</div>
+                    <div className="wr-tbtn" {...touch("down")}>▼</div>
+                    <div className="wr-tbtn" {...touch("right")}>▶</div>
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-end", pointerEvents: "auto" }}>
                   <div className="wr-tbtn big" {...touch("boost")}>BOOST</div>
                   <div className="wr-tbtn big" {...touch("fire")} style={{ borderColor: "#4fc3f7", color: "#eaf6ff" }}>FUOCO</div>
