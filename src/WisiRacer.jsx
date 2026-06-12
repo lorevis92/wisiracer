@@ -539,6 +539,7 @@ function initGame(container, cfg, ui) {
   /* ------ laser ------ */
   const lasGeo = new THREE.BoxGeometry(0.35, 0.35, 5.5);
   const lasers = [];
+  const impactEffects = [];
   function fireLaser(owner, origin, dir, dmg, colorHex) {
     if (lasers.length > 110) return;
     const m = new THREE.Mesh(lasGeo, new THREE.MeshBasicMaterial({ color: colorHex }));
@@ -636,7 +637,7 @@ function initGame(container, cfg, ui) {
     if (s < 0) { r.hull += s; r.shields = 0; } else r.shields = s;
     burst(getPos(r), 6, new THREE.Color(0xffaa55), 32);
     if (r.isPlayer) {
-      shake = Math.min(shake + 0.55, 1.3); ui.onExpr("hit"); audio.hit();
+      shake = Math.min(shake + 0.55, 1.3); ui.onExpr("hit"); ui.onHit(); audio.hit();
       if (r.shields <= 0 && r.hull < 35 && r.hull > 0) throttleMsg("SCAFO CRITICO!");
     }
     if (r.hull <= 0) destroy(r, attacker);
@@ -949,9 +950,16 @@ function initGame(container, cfg, ui) {
       if (!dead) {
         for (const r of racers) {
           if (!r.alive || r === L.owner) continue;
-          if (L.mesh.position.distanceTo(getPos(r)) < 4.5) {
+          if (L.mesh.position.distanceTo(getPos(r)) < 6.5) {
             damage(r, L.dmg, L.owner);
             burst(L.mesh.position, 5, new THREE.Color(L.mesh.material.color.getHex()), 25);
+            // Flash esplosione al punto di impatto
+            const hitPos = L.mesh.position.clone();
+            const flashMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffaa33, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+            const flash = new THREE.Sprite(flashMat); flash.position.copy(hitPos); flash.scale.setScalar(18); scene.add(flash);
+            const ringMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffffff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
+            const ring = new THREE.Sprite(ringMat); ring.position.copy(hitPos); ring.scale.setScalar(8); scene.add(ring);
+            impactEffects.push({ flash, flashMat, ring, ringMat, t: 0 });
             dead = true; break;
           }
         }
@@ -959,6 +967,21 @@ function initGame(container, cfg, ui) {
       if (dead) {
         scene.remove(L.mesh); L.mesh.material.dispose();
         lasers.splice(i, 1);
+      }
+    }
+
+    /* --- impatto laser: flash + shockwave --- */
+    for (let i = impactEffects.length - 1; i >= 0; i--) {
+      const fx = impactEffects[i];
+      fx.t += dt;
+      const p = Math.min(fx.t / 0.12, 1);
+      fx.flashMat.opacity = 1 - p;
+      fx.ringMat.opacity = 0.8 * (1 - p);
+      fx.ring.scale.setScalar(8 + 16 * p);
+      if (fx.t >= 0.15) {
+        scene.remove(fx.flash); fx.flashMat.dispose();
+        scene.remove(fx.ring); fx.ringMat.dispose();
+        impactEffects.splice(i, 1);
       }
     }
 
@@ -1059,6 +1082,16 @@ function initGame(container, cfg, ui) {
       const [x, y] = nrm(getPos(r));
       return { x, y, c: "#" + r.color.toString(16).padStart(6, "0"), p: !!r.isPlayer };
     });
+    const aimFwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+    let aimLocked = false;
+    if (player.alive) {
+      for (const r of racers) {
+        if (!r.alive || r.isPlayer) continue;
+        const to = getPos(r).clone().sub(getPos(player));
+        const d = to.length();
+        if (d < 200 && d > 0) { to.normalize(); if (to.dot(aimFwd) > 0.92) { aimLocked = true; break; } }
+      }
+    }
     ui.onHud({
       count: phase === "count" ? Math.max(0, Math.ceil(cT)) : 0,
       paused,
@@ -1072,7 +1105,7 @@ function initGame(container, cfg, ui) {
       nitro: player.nitro > 0,
       speed: Math.round(player.speed * 9),
       kills: player.kills,
-      dots,
+      dots, aimLocked,
     });
   }
 
@@ -1269,6 +1302,8 @@ export default function WisiRacer() {
   const gyroRef = useRef({ filteredBeta: null, betaRef: null, calibSamples: [], calibDone: false, calibStart: null });
   const gyroEnabledRef = useRef(false);
   const [gyroActive, setGyroActive] = useState(false);
+  const [hitFlash, setHitFlash] = useState(false);
+  const hitFlashTimer = useRef(null);
 
   // Preloader automatico: cerca gli asset in /assets e usa quelli che trova
   useEffect(() => {
@@ -1319,6 +1354,12 @@ export default function WisiRacer() {
         setExpr(e);
         clearTimeout(exprTimer.current);
         exprTimer.current = setTimeout(() => setExpr("idle"), 800);
+      },
+      onHit: () => {
+        setHitFlash(true);
+        clearTimeout(hitFlashTimer.current);
+        hitFlashTimer.current = setTimeout(() => setHitFlash(false), 180);
+        if (navigator.vibrate) navigator.vibrate(120);
       },
       onTrackMap: pts => setTrackMap(pts),
       onEnd: rows => {
@@ -1380,6 +1421,7 @@ export default function WisiRacer() {
       if (gyroCleanup) gyroCleanup();
       clearTimeout(msgTimer.current);
       clearTimeout(exprTimer.current);
+      clearTimeout(hitFlashTimer.current);
     };
   }, [screen]);
 
@@ -1515,6 +1557,20 @@ export default function WisiRacer() {
         <div style={{ position: "absolute", inset: 0 }}>
           <div ref={mountRef} style={{ position: "absolute", inset: 0 }} />
           <div className="wr-hud">
+            {/* Hit flash overlay */}
+            <div style={{ position: "absolute", inset: 0, background: "rgba(255,30,30,0.35)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.3s", pointerEvents: "none" }} />
+            {/* Mirino auto-aim */}
+            {hud && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                <svg width={hud.aimLocked ? 36 : 28} height={hud.aimLocked ? 36 : 28} viewBox="0 0 36 36" style={{ transition: "width 0.08s, height 0.08s" }}>
+                  <line x1="18" y1="2" x2="18" y2="11" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
+                  <line x1="18" y1="25" x2="18" y2="34" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
+                  <line x1="2" y1="18" x2="11" y2="18" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
+                  <line x1="25" y1="18" x2="34" y2="18" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
+                  {hud.aimLocked && <circle cx="18" cy="18" r="5" fill="none" stroke="#ff4444" strokeWidth="1.5" />}
+                </svg>
+              </div>
+            )}
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
             {hud && hud.paused && (
@@ -1545,7 +1601,7 @@ export default function WisiRacer() {
                 </div>
 
                 <div style={{ position: "absolute", bottom: 14, left: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
-                  <PilotFace expr={expr} size={66} photo={assets.pilot} />
+                  {!isTouch && <PilotFace expr={expr} size={66} photo={assets.pilot} />}
                   <div className="wr-chip" style={{ width: 170 }}>
                     <div className="wr-small">Scudi</div>
                     <Bar v={hud.shields} max={60} color="#39d2ff" />
@@ -1570,19 +1626,18 @@ export default function WisiRacer() {
             )}
 
             {isTouch && (
-              <div className="wr-touch" style={{ justifyContent: gyroActive ? "flex-end" : "space-between" }}>
-                {!gyroActive && (
-                  <div style={{ display: "grid", gridTemplateColumns: "62px 62px 62px", gap: 8, pointerEvents: "auto" }}>
-                    <div /><div className="wr-tbtn" {...touch("up")}>▲</div><div />
-                    <div className="wr-tbtn" {...touch("left")}>◀</div>
-                    <div className="wr-tbtn" {...touch("down")}>▼</div>
-                    <div className="wr-tbtn" {...touch("right")}>▶</div>
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-end", pointerEvents: "auto" }}>
+              <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
+                  {!gyroActive && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <div className="wr-tbtn" {...touch("left")}>◀</div>
+                      <div className="wr-tbtn" {...touch("right")}>▶</div>
+                    </div>
+                  )}
                   <div className="wr-tbtn big" {...touch("boost")}>BOOST</div>
-                  <div className="wr-tbtn big" {...touch("fire")} style={{ borderColor: "#4fc3f7", color: "#eaf6ff" }}>FUOCO</div>
                 </div>
+                <PilotFace expr={expr} size={80} photo={assets.pilot} />
+                <div className="wr-tbtn big" {...touch("fire")} style={{ pointerEvents: "auto", borderColor: "#4fc3f7", color: "#eaf6ff" }}>FUOCO</div>
               </div>
             )}
           </div>
