@@ -148,129 +148,29 @@ function makeAIShipMesh(color) {
 
 /* ---------------------------- audio synth ---------------------------- */
 function makeAudio() {
-  let ctx = null, master, comp, musicGain, muted = false;
+  let ctx = null, master, comp, musicGain, musicEl = null, muted = false;
   let oscA, oscB, sub, engFilter, engGain, noiseFilter, noiseGain;
-  let nextNoteTime = 0, eighthIdx = 0, schedId = null;
-  let prevSpeed = 0, prevYawVel = 0, accelTimer = 0, cornerTimer = 0;
-  let lastEngT = 0, lastBelow40 = -9;
-
-  const BPM = 128, EIGHTH = 60 / BPM / 2;
-  // A-E-F#m-D in A major: root frequencies (Hz)
-  const BASS_F = [110.00, 82.41, 92.50, 73.41];
-  const PAD_F  = [
-    [220.00, 277.18, 329.63], // A maj
-    [164.81, 207.65, 246.94], // E maj
-    [185.00, 220.00, 277.18], // F#m
-    [146.83, 185.00, 220.00], // D maj
-  ];
-  // 2-bar melody phrase (16 eighths), null = rest
-  const MEL_F = [
-    659.25, null, 587.33, null, 493.88, null, 440.00, null,
-    493.88, null, 659.25, null, 440.00, null, null,   null,
-  ];
-
-  function schedMusic() {
-    if (!ctx) return;
-    while (nextNoteTime < ctx.currentTime + 0.12) {
-      const t     = nextNoteTime;
-      const barE  = eighthIdx % 8;
-      const chord = Math.floor(eighthIdx / 8) % 4;
-
-      if (!muted) {
-        // Kick — beat 1 & 3 (barE 0 & 4)
-        if (barE === 0 || barE === 4) {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.frequency.setValueAtTime(78, t);
-          o.frequency.exponentialRampToValueAtTime(26, t + 0.09);
-          g.gain.setValueAtTime(0.55, t);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
-          o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + 0.15);
-        }
-        // Snare — beat 2 & 4 (barE 2 & 6)
-        if (barE === 2 || barE === 6) {
-          const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.18), ctx.sampleRate);
-          const d   = buf.getChannelData(0);
-          for (let i = 0; i < d.length; i++)
-            d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.28));
-          const n = ctx.createBufferSource(); n.buffer = buf;
-          const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2800; f.Q.value = 0.7;
-          const g = ctx.createGain();
-          g.gain.setValueAtTime(0.38, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-          n.connect(f); f.connect(g); g.connect(musicGain); n.start(t);
-        }
-        // Hi-hat — every 8th, accent on downbeats
-        {
-          const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.042), ctx.sampleRate);
-          const d   = buf.getChannelData(0);
-          for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-          const n = ctx.createBufferSource(); n.buffer = buf;
-          const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 8200;
-          const g = ctx.createGain();
-          g.gain.setValueAtTime(barE % 2 === 0 ? 0.13 : 0.07, t);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.042);
-          n.connect(f); f.connect(g); g.connect(musicGain); n.start(t);
-        }
-        // Bass — on every beat (barE 0,2,4,6)
-        if (barE % 2 === 0) {
-          const o = ctx.createOscillator(); o.type = "sawtooth";
-          const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 310; f.Q.value = 1.1;
-          const g = ctx.createGain();
-          o.frequency.value = BASS_F[chord];
-          g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.30, t + 0.018);
-          g.gain.exponentialRampToValueAtTime(0.001, t + EIGHTH * 1.75);
-          o.connect(f); f.connect(g); g.connect(musicGain); o.start(t); o.stop(t + EIGHTH * 2 + 0.04);
-        }
-        // Chord pad — one per bar (barE 0), fades over the full bar
-        if (barE === 0) {
-          PAD_F[chord].forEach(freq => {
-            const o = ctx.createOscillator(); o.type = "square";
-            const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 750; f.Q.value = 0.4;
-            const g = ctx.createGain();
-            o.frequency.value = freq;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.038, t + 0.09);
-            g.gain.setValueAtTime(0.038, t + EIGHTH * 6.5);
-            g.gain.exponentialRampToValueAtTime(0.001, t + EIGHTH * 8.5);
-            o.connect(f); f.connect(g); g.connect(musicGain); o.start(t); o.stop(t + EIGHTH * 9);
-          });
-        }
-        // Melody — enters in bars 4-7 of every 8-bar window
-        if (Math.floor(eighthIdx / 8) % 8 >= 4) {
-          const mf = MEL_F[eighthIdx % 16];
-          if (mf) {
-            const o = ctx.createOscillator(); o.type = "triangle";
-            const g = ctx.createGain();
-            o.frequency.value = mf;
-            g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.14, t + 0.025);
-            g.gain.setValueAtTime(0.14, t + EIGHTH * 0.75);
-            g.gain.exponentialRampToValueAtTime(0.001, t + EIGHTH * 1.9);
-            o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + EIGHTH * 2 + 0.04);
-          }
-        }
-      }
-
-      nextNoteTime += EIGHTH;
-      eighthIdx++;
-    }
-    schedId = setTimeout(schedMusic, 28);
-  }
+  let prevYawVel = 0, cornerTimer = 0, lastEngT = 0;
 
   function ensure() {
     if (ctx) return;
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16; comp.knee.value = 8;
-      comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.22;
+      comp.threshold.value = -14; comp.knee.value = 6;
+      comp.ratio.value = 3; comp.attack.value = 0.003; comp.release.value = 0.18;
       master = ctx.createGain(); master.gain.value = 1.0;
       comp.connect(master); master.connect(ctx.destination);
 
-      musicGain = ctx.createGain(); musicGain.gain.value = 0.38;
-      musicGain.connect(comp);
+      // Musica: MP3 via HTMLAudioElement → MediaElementSource → comp
+      musicEl = new Audio("/assets/music.mp3");
+      musicEl.loop = true;
+      const mediaSrc = ctx.createMediaElementSource(musicEl);
+      musicGain = ctx.createGain(); musicGain.gain.value = muted ? 0 : 0.35;
+      mediaSrc.connect(musicGain); musicGain.connect(comp);
+      musicEl.play().catch(() => {});
 
-      // Motore: sawtooth × 2 + sub + waveshaper + filtro
+      // Motore: sawtooth × 2 + sub + waveshaper + filtro lowpass
       oscA = ctx.createOscillator(); oscA.type = "sawtooth";
       oscB = ctx.createOscillator(); oscB.type = "sawtooth"; oscB.detune.value = 14;
       sub  = ctx.createOscillator(); sub.type  = "square";
@@ -279,7 +179,8 @@ function makeAudio() {
       const curve  = new Float32Array(256);
       for (let i = 0; i < 256; i++) { const x = i / 127.5 - 1; curve[i] = Math.tanh(2.6 * x); }
       shaper.curve = curve;
-      engFilter = ctx.createBiquadFilter(); engFilter.type = "lowpass"; engFilter.frequency.value = 400; engFilter.Q.value = 1.3;
+      engFilter = ctx.createBiquadFilter();
+      engFilter.type = "lowpass"; engFilter.frequency.value = 300; engFilter.Q.value = 1.2;
       engGain = ctx.createGain(); engGain.gain.value = 0;
       oscA.connect(pre); oscB.connect(pre); sub.connect(pre);
       pre.connect(shaper); shaper.connect(engFilter); engFilter.connect(engGain); engGain.connect(comp);
@@ -291,14 +192,11 @@ function makeAudio() {
       const nd   = nbuf.getChannelData(0);
       for (let i = 0; i < nlen; i++) nd[i] = Math.random() * 2 - 1;
       const nsrc = ctx.createBufferSource(); nsrc.buffer = nbuf; nsrc.loop = true;
-      noiseFilter = ctx.createBiquadFilter(); noiseFilter.type = "bandpass"; noiseFilter.frequency.value = 900; noiseFilter.Q.value = 0.6;
+      noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = "bandpass"; noiseFilter.frequency.value = 900; noiseFilter.Q.value = 0.6;
       noiseGain = ctx.createGain(); noiseGain.gain.value = 0;
       nsrc.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(comp);
       nsrc.start();
-
-      nextNoteTime = ctx.currentTime + 0.05;
-      eighthIdx = 0;
-      schedMusic();
     } catch (e) { ctx = null; }
   }
 
@@ -337,53 +235,44 @@ function makeAudio() {
       const dt  = lastEngT > 0 ? Math.min(0.05, now - lastEngT) : 0.016;
       lastEngT  = now;
 
-      // Traccia l'ultima volta che la velocità era sotto 40
-      if (speed < 40 && on) lastBelow40 = now;
-      // Evento accelerazione: velocità attraversa 70 in salita entro 1s dall'essere <40
-      if (prevSpeed < 70 && speed >= 70 && on && now - lastBelow40 < 1.0) accelTimer = 0.8;
-      accelTimer = Math.max(0, accelTimer - dt);
-
-      // Evento uscita curva: yawVel scende sotto 0.3 dopo essere stato sopra 0.8
+      // Uscita curva: yawVel scende sotto 0.3 dopo essere stato sopra 0.8
       const curYaw = Math.abs(yawVel);
       if (Math.abs(prevYawVel) >= 0.8 && curYaw < 0.3 && on) cornerTimer = 0.6;
       cornerTimer = Math.max(0, cornerTimer - dt);
-
-      prevSpeed  = speed;
       prevYawVel = yawVel;
 
-      const f = 42 + Math.min(150, speed) * 1.35;
+      // Frequenza base segue la velocità; filtro si apre con i giri
+      const f = 38 + Math.min(150, speed) * 1.2;
       oscA.frequency.value = f; oscB.frequency.value = f * 1.006; sub.frequency.value = f * 0.5;
+      engFilter.frequency.setTargetAtTime(200 + speed * 9, now, 0.1);
 
-      if (!on || muted) {
-        engGain.gain.setTargetAtTime(0, now, 0.05);
-        noiseGain.gain.setTargetAtTime(0, now, 0.05);
-      } else if (boosting) {
-        engFilter.frequency.setTargetAtTime(1300, now, 0.07);
-        engGain.gain.setTargetAtTime(0.18,  now, 0.06);
-        noiseGain.gain.setTargetAtTime(0.06, now, 0.06);
-      } else if (accelTimer > 0) {
-        engFilter.frequency.setTargetAtTime(850, now, 0.04);
-        engGain.gain.setTargetAtTime(0.10,  now, 0.03);
-        noiseGain.gain.setTargetAtTime(0.04, now, 0.03);
-      } else if (cornerTimer > 0) {
-        engFilter.frequency.setTargetAtTime(950, now, 0.035);
-        engGain.gain.setTargetAtTime(0.09,  now, 0.025);
-        noiseGain.gain.setTargetAtTime(0.03, now, 0.025);
+      if (muted) {
+        engGain.gain.setTargetAtTime(0,     now, 0.15);
+        noiseGain.gain.setTargetAtTime(0,   now, 0.15);
+      } else if (!on) {
+        // Brusio di fondo minimo (player morto o countdown)
+        engGain.gain.setTargetAtTime(0.018, now, 0.15);
+        noiseGain.gain.setTargetAtTime(0.006, now, 0.15);
+      } else if (boosting || cornerTimer > 0) {
+        // Volume alto: boost o uscita curva
+        engGain.gain.setTargetAtTime(0.07,  now, 0.15);
+        noiseGain.gain.setTargetAtTime(0.025, now, 0.15);
       } else {
-        engGain.gain.setTargetAtTime(0, now, 0.08);
-        noiseGain.gain.setTargetAtTime(0, now, 0.08);
+        // Crociera normale
+        engGain.gain.setTargetAtTime(0.038, now, 0.15);
+        noiseGain.gain.setTargetAtTime(0.014, now, 0.15);
       }
     },
     setMuted(m) {
       muted = m;
-      if (musicGain) musicGain.gain.value = muted ? 0 : 0.38;
-      if (engGain)   engGain.gain.value   = 0;
-      if (noiseGain) noiseGain.gain.value = 0;
+      if (musicGain) musicGain.gain.value = muted ? 0 : 0.35;
+      if (engGain)   engGain.gain.value   = muted ? 0 : 0.018;
+      if (noiseGain) noiseGain.gain.value = muted ? 0 : 0.006;
       return muted;
     },
     toggleMuted() { return this.setMuted(!muted); },
     dispose() {
-      if (schedId) clearTimeout(schedId);
+      if (musicEl) { musicEl.pause(); musicEl.src = ""; musicEl = null; }
       if (ctx) { try { ctx.close(); } catch (e) {} ctx = null; }
     },
   };
