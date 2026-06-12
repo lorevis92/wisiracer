@@ -698,7 +698,7 @@ function initGame(container, cfg, ui) {
     if (player.alive && racing) {
       const ctrl = phase === "race" && !player.finished;
       const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
-      const pt = ctrl ? (keys.gyroActive ? (keys.gyroPitch || 0) : (keys.up ? 1 : 0) - (keys.down ? 1 : 0)) : 0;
+      const pt = ctrl ? (keys.up ? 1 : 0) - (keys.down ? 1 : 0) : 0;
       player.yawVel += ((-st * 1.75) - player.yawVel) * Math.min(1, dt * 7);
       player.yaw += player.yawVel * dt;
       player.pitch += pt * 1.15 * dt;
@@ -1207,11 +1207,11 @@ export default function WisiRacer() {
   const [vids, setVids] = useState({});
   const mountRef = useRef(null);
   const mapRef = useRef(null);
-  const keysRef = useRef({ left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroPitch: 0, gyroActive: false });
+  const keysRef = useRef({ left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
   const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
-  const gyroRef = useRef({ filteredBeta: null, filteredGamma: null, betaRef: null, calibSamples: [], calibDone: false, calibStart: null });
+  const gyroRef = useRef({ filteredBeta: null, betaRef: null, calibSamples: [], calibDone: false, calibStart: null });
   const gyroEnabledRef = useRef(false);
   const [gyroActive, setGyroActive] = useState(false);
 
@@ -1281,7 +1281,6 @@ export default function WisiRacer() {
     if (isTouch && gyroEnabledRef.current) {
       const gyro = gyroRef.current;
       gyro.filteredBeta = null;
-      gyro.filteredGamma = null;
       gyro.betaRef = null;
       gyro.calibSamples = [];
       gyro.calibDone = false;
@@ -1290,14 +1289,8 @@ export default function WisiRacer() {
       const onOrientation = (e) => {
         if (e.beta === null) return;
         const now = performance.now() / 1000;
-
-        // Low-pass filter 0.75/0.25 su entrambi gli assi
         if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
         gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
-        if (gyro.filteredGamma === null) gyro.filteredGamma = (e.gamma || 0);
-        gyro.filteredGamma = 0.75 * gyro.filteredGamma + 0.25 * (e.gamma || 0);
-
-        // Auto-calibrazione: media beta nei primi 2 secondi
         if (!gyro.calibDone) {
           if (gyro.calibStart === null) gyro.calibStart = now;
           gyro.calibSamples.push(gyro.filteredBeta);
@@ -1306,27 +1299,13 @@ export default function WisiRacer() {
             gyro.calibDone = true;
           }
         }
-
-        // Sterzo: gamma (inclinazione sinistra/destra), DEAD=4, FULL=35
-        const rawGamma = gyro.filteredGamma;
-        const SDEAD = 4, SFULL = 35;
+        const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
+        const DEAD = 4, MAX = 26;
         let steer = 0;
-        if (Math.abs(rawGamma) > SDEAD) {
-          steer = Math.max(-1, Math.min(1, (Math.abs(rawGamma) - SDEAD) / (SFULL - SDEAD))) * Math.sign(rawGamma);
+        if (Math.abs(tilt) > DEAD) {
+          steer = Math.max(-1, Math.min(1, (Math.abs(tilt) - DEAD) / (MAX - DEAD))) * Math.sign(tilt);
         }
         keysRef.current.gyroSteer = steer;
-
-        // Pitch: beta - betaRef (inclinare verso di sé = beta↑ = muso su = pt > 0)
-        // Clamp a 50°: oltre quella soglia il telefono è verticale, ignora il pitch
-        let pt = 0;
-        if (gyro.calibDone) {
-          const pitchRaw = gyro.filteredBeta - gyro.betaRef;
-          const PDEAD = 3, PFULL = 22;
-          if (Math.abs(pitchRaw) <= 50 && Math.abs(pitchRaw) > PDEAD) {
-            pt = Math.max(-1, Math.min(1, (Math.abs(pitchRaw) - PDEAD) / (PFULL - PDEAD))) * Math.sign(pitchRaw);
-          }
-        }
-        keysRef.current.gyroPitch = pt;
       };
 
       window.addEventListener("deviceorientation", onOrientation);
@@ -1337,7 +1316,6 @@ export default function WisiRacer() {
         window.removeEventListener("deviceorientation", onOrientation);
         keysRef.current.gyroActive = false;
         keysRef.current.gyroSteer = 0;
-        keysRef.current.gyroPitch = 0;
         setGyroActive(false);
       };
     }
