@@ -652,8 +652,6 @@ function initGame(container, cfg, ui) {
     switch (code) {
       case "ArrowLeft": case "KeyA": keys.left = v; return true;
       case "ArrowRight": case "KeyD": keys.right = v; return true;
-      case "ArrowUp": case "KeyW": keys.up = v; return true;
-      case "ArrowDown": case "KeyS": keys.down = v; return true;
       case "ShiftLeft": case "ShiftRight": keys.boost = v; return true;
       case "Space": keys.fire = v; return true;
       case "KeyX": case "ControlLeft": case "ControlRight": keys.brake = v; return true;
@@ -698,12 +696,8 @@ function initGame(container, cfg, ui) {
     if (player.alive && racing) {
       const ctrl = phase === "race" && !player.finished;
       const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
-      const pt = ctrl ? (keys.up ? 1 : 0) - (keys.down ? 1 : 0) : 0;
       player.yawVel += ((-st * 1.75) - player.yawVel) * Math.min(1, dt * 7);
       player.yaw += player.yawVel * dt;
-      player.pitch += pt * 1.15 * dt;
-      if (!pt) player.pitch *= Math.max(0, 1 - dt * 1.4);
-      player.pitch = THREE.MathUtils.clamp(player.pitch, -0.95, 0.95);
 
       let target = ctrl && keys.brake ? 48 : 88;
       let boosting = false;
@@ -717,15 +711,10 @@ function initGame(container, cfg, ui) {
       player.speed += (target - player.speed) * Math.min(1, dt * (boosting ? 2.6 : 1.6));
       player.boosting = boosting;
 
-      const cp = Math.cos(player.pitch);
-      fwdV.set(-Math.sin(player.yaw) * cp, Math.sin(player.pitch), -Math.cos(player.yaw) * cp);
+      fwdV.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
       player.mesh.position.addScaledVector(fwdV, player.speed * dt);
       if (player.mesh.userData.sprite) {
         player.mesh.material.rotation = player.yawVel * 0.45;
-      } else {
-        tmpV.copy(player.mesh.position).add(fwdV);
-        player.mesh.lookAt(tmpV);
-        player.mesh.children[0].rotation.z = -player.yawVel * 0.55;
       }
       if (player.mesh.userData.glow) player.mesh.userData.glow.scale.setScalar(3 + player.speed * 0.035 + (boosting ? 2 : 0));
       if (boosting && Math.random() < 0.7) burst(getPos(player).clone().addScaledVector(fwdV, -4), 2, new THREE.Color(0x55bbff), 18);
@@ -753,6 +742,23 @@ function initGame(container, cfg, ui) {
       const prevT = player.t;
       const { t: newT, d: distC } = closestT(getPos(player), prevT);
       player.t = newT;
+
+      // Altitudine automatica: segui il tracciato con +8 unità di quota
+      const trackY = cPts[Math.floor(newT * SAMPLES)].y + 8;
+      player.mesh.position.y += (trackY - player.mesh.position.y) * Math.min(1, dt * 3.5);
+
+      // Orientamento visivo: inclina la navicella verso la pendenza del tracciato davanti
+      if (!player.mesh.userData.sprite) {
+        const lookIdx = (Math.floor(newT * SAMPLES) + 6) % SAMPLES;
+        tmpV.set(
+          player.mesh.position.x + fwdV.x * 14,
+          cPts[lookIdx].y + 8,
+          player.mesh.position.z + fwdV.z * 14
+        );
+        player.mesh.lookAt(tmpV);
+        player.mesh.children[0].rotation.z = -player.yawVel * 0.55;
+      }
+
       if (distC > 95 && phase === "race") {
         tmpV.copy(cPts[Math.floor(newT * SAMPLES)]).sub(getPos(player)).normalize();
         player.mesh.position.addScaledVector(tmpV, 30 * dt);
@@ -1442,7 +1448,7 @@ export default function WisiRacer() {
           <button className="wr-btn" onClick={startRace}>VIA ALLA GARA 🚀</button>
           <div style={{ height: 18 }} />
           <p className="wr-hint">
-            ⌨ Frecce / WASD: vira e cabra · SHIFT: boost · SPAZIO: laser · X: freno · ESC: pausa · M: audio on/off
+            ⌨ Frecce / WASD: vira · SHIFT: boost · SPAZIO: laser · X: freno · ESC: pausa · M: audio on/off
             {isTouch ? " · 📱 Su touch trovi i comandi a schermo." : ""}
           </p>
         </div>
