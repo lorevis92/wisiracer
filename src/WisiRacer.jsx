@@ -13,7 +13,7 @@ const DIFFS = {
 };
 
 // Asset fotografici: metti i file in public/assets/ e vengono caricati in automatico
-const ASSET_PATHS = { ship: "/assets/ship.png", pilot: "/assets/pilot.png" };
+const ASSET_PATHS = { ship: "/assets/ship_whiskey.png", pilot: "/assets/pilot_whiskey.png" };
 
 const MODES = {
   grand_prix:    { label: "Grand Prix",      icon: "🏁", laps: 3, desc: "3 giri contro 6 rivali. Vince chi taglia per primo il traguardo. Le armi sono consentite — esplodere costa solo tempo." },
@@ -65,6 +65,16 @@ const AI_ROSTER = [
   { name: "Dax",  color: 0xc77dff },
   { name: "Zhul", color: 0xffe14d },
   { name: "Mira", color: 0xff6ad5 },
+];
+
+const PILOTS = [
+  { id:"whiskey", name:"Whiskey", color:0x4fc3f7, shipImg:"/assets/ship_whiskey.png", pilotImg:"/assets/pilot_whiskey.png", cardImg:"/assets/card_whiskey.png", desc:"Pilota misterioso, faccia blu. Nessuno sa da dove viene.", ship:"W-Shaped Starfighter" },
+  { id:"vex",     name:"Vex",     color:0xff4d4d, shipImg:"/assets/ship_vex.png",     pilotImg:"/assets/pilot_vex.png",     cardImg:"/assets/card_vex.png",     desc:"Rettiliano aggressivo. Spietato in gara e fuori.",         ship:"Razor Blade" },
+  { id:"korr",    name:"Korr",    color:0xff9b3d, shipImg:"/assets/ship_korr.png",    pilotImg:"/assets/pilot_korr.png",    cardImg:"/assets/card_korr.png",    desc:"Massiccio e inarrestabile. La sua nave è un carro armato.", ship:"Assault Cruiser" },
+  { id:"nyra",    name:"Nyra",    color:0x69f06e, shipImg:"/assets/ship_nyra.png",    pilotImg:"/assets/pilot_nyra.png",    cardImg:"/assets/card_nyra.png",    desc:"Velocissima e sfuggente. Nessuno la prende.",               ship:"Y-Interceptor" },
+  { id:"dax",     name:"Dax",     color:0xc77dff, shipImg:"/assets/ship_dax.png",     pilotImg:"/assets/pilot_dax.png",     cardImg:"/assets/card_dax.png",     desc:"Preciso come un computer. Calcola ogni mossa.",             ship:"Hex Module" },
+  { id:"zhul",    name:"Zhul",    color:0xffe14d, shipImg:"/assets/ship_zhul.png",    pilotImg:"/assets/pilot_zhul.png",   cardImg:"/assets/card_zhul.png",    desc:"Enigmatico e antico. La sua nave sembra viva.",             ship:"Manta Gold" },
+  { id:"mira",    name:"Mira",    color:0xff6ad5, shipImg:"/assets/ship_mira.png",    pilotImg:"/assets/pilot_mira.png",   cardImg:"/assets/card_mira.png",    desc:"Elegante e letale. La perfezione ha una forma.",            ship:"Delta Chrome" },
 ];
 
 const GP_POINTS = [10, 8, 6, 4, 3, 2, 1];
@@ -312,7 +322,8 @@ function initGame(container, cfg, ui) {
   /* ------ asset fotografici opzionali ------ */
   const ASSETS = cfg.assets || {};
   const texLoader = new THREE.TextureLoader();
-  const shipTex = ASSETS.ship ? texLoader.load(ASSETS.ship) : null;
+  const shipSrc = (cfg.pilot && cfg.pilot.shipImg) ? cfg.pilot.shipImg : ASSETS.ship;
+  const shipTex = shipSrc ? texLoader.load(shipSrc) : null;
 
   const W = () => container.clientWidth || 800;
   const H = () => container.clientHeight || 600;
@@ -598,9 +609,10 @@ function initGame(container, cfg, ui) {
 
   /* ------ piloti ------ */
   const racers = [];
+  const PILOT = cfg.pilot || { name: "Whiskey", color: 0x4fc3f7 };
   const player = {
-    isPlayer: true, name: "BLU", color: 0x4fc3f7,
-    mesh: makeShipVisual(0x4fc3f7, true),
+    isPlayer: true, name: PILOT.name, color: PILOT.color,
+    mesh: makeShipVisual(PILOT.color, true),
     yaw: 0, pitch: 0, yawVel: 0, speed: 0,
     boost: 100, heat: 0, hot: false, nitro: 0, alt: false, fireT: 0,
     shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
@@ -1430,6 +1442,8 @@ export default function WisiRacer() {
   const trackKeys = Object.keys(TRACKS);
   const [slideIdx, setSlideIdx] = useState(0);
   const slideRef = useRef(0);
+  const [pilotIdx, setPilotIdx] = useState(0);
+  const pilotSlideRef = useRef(0);
   const mirRef = useRef({ x: 0, y: 0 });
   const crosshairElRef = useRef(null);
 
@@ -1507,6 +1521,7 @@ export default function WisiRacer() {
     const cleanup = initGame(mountRef.current, {
       track: trackKey, mode: modeKey, diff: diffKey, keys: keysRef.current,
       assets: { ship: assetsRef.current.ship, bg: assetsRef.current.bgs ? assetsRef.current.bgs[trackKey] : null },
+      pilot: PILOTS[pilotIdx],
       mirRef,
     }, ui);
 
@@ -1677,10 +1692,10 @@ export default function WisiRacer() {
         <div className="wr-screen" style={{ justifyContent: "flex-start", paddingTop: 34 }}>
           <div className="wr-bgfx" />
           <div className="wr-row" style={{ gap: 18 }}>
-            <PilotFace size={74} expr="idle" photo={assets.pilot} />
+            <PilotFace size={74} expr="idle" photo={PILOTS[pilotIdx].pilotImg} />
             <div>
-              <div className="wr-disp" style={{ fontSize: 22, fontWeight: 800, color: "#eaf6ff" }}>Pilota "BLU"</div>
-              <div style={{ fontSize: 13, color: "#7fb6e8" }}>W-Shaped Starfighter · Squadrone Aquila</div>
+              <div className="wr-disp" style={{ fontSize: 22, fontWeight: 800, color: "#eaf6ff" }}>Pilota "{PILOTS[pilotIdx].name}"</div>
+              <div style={{ fontSize: 13, color: "#7fb6e8" }}>{PILOTS[pilotIdx].ship} · Squadrone Aquila</div>
             </div>
             <ShipIcon size={104} />
           </div>
@@ -1693,6 +1708,42 @@ export default function WisiRacer() {
                 <p>{m.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="wr-label wr-disp">Pilota</div>
+          <div style={{position:'relative',width:'100%',maxWidth:700,margin:'0 auto',borderRadius:14,overflow:'hidden',height:270,background:'#060e1a',border:'1px solid #1d3a5c',flexShrink:0}}
+            onTouchStart={e=>{pilotSlideRef.current=e.touches[0].clientX;}}
+            onTouchEnd={e=>{
+              const dx=e.changedTouches[0].clientX-(pilotSlideRef.current||0);
+              if(dx<-50){setPilotIdx(i=>(i+1)%PILOTS.length);}
+              if(dx>50){setPilotIdx(i=>(i-1+PILOTS.length)%PILOTS.length);}
+            }}>
+            <img src={PILOTS[pilotIdx].cardImg} alt=""
+              style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:1}}
+              onError={e=>{e.target.style.display='none';}} />
+            <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.05) 50%)',zIndex:2}} />
+            <div style={{position:'absolute',bottom:44,left:22,right:22,zIndex:3}}>
+              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
+                <img src={PILOTS[pilotIdx].pilotImg} alt=""
+                  style={{width:52,height:52,borderRadius:8,objectFit:'cover',border:'2px solid rgba(255,255,255,0.3)'}}
+                  onError={e=>{e.target.style.display='none';}} />
+                <div>
+                  <div style={{fontFamily:'Orbitron,sans-serif',fontSize:22,fontWeight:900,color:'#fff'}}>{PILOTS[pilotIdx].name}</div>
+                  <div style={{fontSize:13,color:'#9fd6ff'}}>{PILOTS[pilotIdx].ship}</div>
+                </div>
+              </div>
+              <div style={{fontSize:13,color:'#7fb6e8'}}>{PILOTS[pilotIdx].desc}</div>
+            </div>
+            <div style={{position:'absolute',bottom:14,left:0,right:0,display:'flex',justifyContent:'center',gap:7,zIndex:3}}>
+              {PILOTS.map((_,i)=>(
+                <div key={i} onClick={()=>setPilotIdx(i)}
+                  style={{width:i===pilotIdx?22:7,height:7,borderRadius:4,background:i===pilotIdx?'#4fc3f7':'rgba(255,255,255,0.28)',cursor:'pointer',transition:'all 0.25s'}} />
+              ))}
+            </div>
+            <button onClick={()=>setPilotIdx(i=>(i-1+PILOTS.length)%PILOTS.length)}
+              style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:4}}>‹</button>
+            <button onClick={()=>setPilotIdx(i=>(i+1)%PILOTS.length)}
+              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:4}}>›</button>
           </div>
 
           <div className="wr-label wr-disp">Circuito</div>
@@ -1820,7 +1871,7 @@ export default function WisiRacer() {
                 </div>
 
                 <div style={{ position: "absolute", bottom: 14, left: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
-                  {!isTouch && <PilotFace expr={expr} size={66} photo={assets.pilot} />}
+                  {!isTouch && <PilotFace expr={expr} size={66} photo={PILOTS[pilotIdx].pilotImg} />}
                   <div className="wr-chip" style={{ width: 170 }}>
                     <div className="wr-small">Scudi</div>
                     <Bar v={hud.shields} max={60} color="#39d2ff" />
@@ -1855,7 +1906,7 @@ export default function WisiRacer() {
                   )}
                   <div className="wr-tbtn big" {...touch("fire")} style={{ borderColor: "#4fc3f7", color: "#eaf6ff", width: 90, height: 90 }}>FUOCO</div>
                 </div>
-                <PilotFace expr={expr} size={80} photo={assets.pilot} />
+                <PilotFace expr={expr} size={80} photo={PILOTS[pilotIdx].pilotImg} />
                 <div className="wr-tbtn big" {...touch("boost")} style={{ pointerEvents: "auto" }}>BOOST</div>
               </div>
             )}
