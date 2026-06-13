@@ -239,7 +239,15 @@ function makeAudio() {
     hit()        { noise(0.08, 0.16, 1800); },
     explode()    { noise(0.5,  0.5,  700); blip(180, 40, 0.4, "sawtooth", 0.22); },
     pickup()     { blip(440,  1320, 0.18, "sine",    0.14); },
-    count(hi)    { blip(hi ? 880 : 440, hi ? 880 : 440, 0.13, "sine", 0.2); },
+    count(n) {
+      if      (n === 3) blip(330, 330, 0.15, "sine", 0.25);
+      else if (n === 2) blip(440, 440, 0.15, "sine", 0.25);
+      else if (n === 1) blip(550, 550, 0.15, "sine", 0.28);
+      else if (n === 0) {
+        blip(660, 660, 0.1, "sine", 0.3);
+        setTimeout(() => { blip(880, 880, 0.15, "sine", 0.35); noise(0.08, 0.18, 2000); }, 120);
+      }
+    },
     engine(speed, on, boosting, yawVel = 0) {
       if (!ctx) return;
       const now = ctx.currentTime;
@@ -756,7 +764,7 @@ function initGame(container, cfg, ui) {
     if (phase === "count") {
       cT -= dt;
       const c = Math.max(0, Math.ceil(cT));
-      if (c !== lastC) { lastC = c; audio.count(c === 0); }
+      if (c !== lastC) { lastC = c; audio.count(c); }
       if (cT <= 0) { phase = "race"; ui.onMsg("VIA! 🚀"); ui.onRaceStart(); }
     }
 
@@ -1460,7 +1468,6 @@ export default function WisiRacer() {
     Object.keys(keysRef.current).forEach(k => (keysRef.current[k] = 0));
     keysRef.current.gyroActive = false;
     keysRef.current.gyroSteer = 0;
-    const calibReadyForGyro = { current: false };
     const ui = {
       onHud: h => setHud(h),
       onMsg: m => {
@@ -1484,14 +1491,7 @@ export default function WisiRacer() {
         clearTimeout(hitMsgTimer.current);
         hitMsgTimer.current = setTimeout(() => setHitMsg(null), 600);
       },
-      onRaceStart: () => {
-        calibReadyForGyro.current = true;
-        if (isTouch && gyroEnabledRef.current) {
-          setMsg("📱 Tieni il telefono in posizione di guida...");
-          clearTimeout(msgTimer.current);
-          // nessun auto-clear: sparisce quando la calibrazione finisce (2s)
-        }
-      },
+      onRaceStart: () => {},
       onTrackMap: pts => setTrackMap(pts),
       onEnd: rows => {
         setResults(rows);
@@ -1567,21 +1567,12 @@ export default function WisiRacer() {
         const now = performance.now() / 1000;
         if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
         gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
-        if (!calibReadyForGyro.current) {
-          // conto alla rovescia — filtra ma non calibrare, non sterzare
-          gyro.calibStart = null;
-          gyro.calibSamples = [];
-          keysRef.current.gyroSteer = 0;
-          return;
-        }
         if (!gyro.calibDone) {
           if (gyro.calibStart === null) gyro.calibStart = now;
           gyro.calibSamples.push(gyro.filteredBeta);
           if (now - gyro.calibStart >= 2) {
             gyro.betaRef = gyro.calibSamples.reduce((a, b) => a + b, 0) / gyro.calibSamples.length;
             gyro.calibDone = true;
-            setMsg(null);
-            clearTimeout(msgTimer.current);
           }
         }
         const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
@@ -1797,6 +1788,11 @@ export default function WisiRacer() {
                 </svg>
               </div>
             </div>
+            {hud && hud.count > 0 && gyroActive && (
+              <div style={{position:'absolute',top:'calc(50% - 80px)',left:0,right:0,textAlign:'center',fontSize:18,color:'#9fd6ff',fontFamily:'Rajdhani,sans-serif',fontWeight:600,textShadow:'0 1px 8px rgba(0,0,0,0.9)',zIndex:10,pointerEvents:'none'}}>
+                📱 Tieni il telefono in posizione di guida
+              </div>
+            )}
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
             {hitMsg && <div className="wr-msg" style={{ color: "#ff6644", textShadow: "0 0 18px rgba(255,80,0,.9)", top: "10%", bottom: "auto" }}>{hitMsg}</div>}
