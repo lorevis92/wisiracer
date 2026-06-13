@@ -629,11 +629,12 @@ function initGame(container, cfg, ui) {
   scene.add(player.mesh);
   racers.push(player);
 
-  AI_ROSTER.forEach((a, i) => {
+  const aiPilots = PILOTS.filter(p => p.id !== PILOT.id);
+  aiPilots.forEach((a, i) => {
     const t0 = (startT + 0.0045 * (i + 1)) % 1;
     const r = {
       isPlayer: false, name: a.name, color: a.color,
-      mesh: makeShipVisual(a.color, false, pilotTexMap[a.name.toLowerCase()]),
+      mesh: makeShipVisual(a.color, false, pilotTexMap[a.id]),
       t: t0, lat: (i % 2 ? 1 : -1) * (8 + Math.floor(i / 2) * 5),
       voff: -3 + Math.random() * 6, wf: 0.5 + Math.random(), phase: Math.random() * 6,
       base: DF.aiBase + (Math.random() * 8 - 4), curSpeed: DF.aiBase,
