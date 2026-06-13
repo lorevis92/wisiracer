@@ -7,9 +7,9 @@ import * as THREE from "three";
    ===================================================================== */
 
 const DIFFS = {
-  cadet: { label: "Cadetto", aiBase: 72, aiDmg: 6,  fireCd: 1.5, rubber: 14 },
-  pilot: { label: "Pilota",  aiBase: 82, aiDmg: 9,  fireCd: 1.0, rubber: 11 },
-  ace:   { label: "Asso",    aiBase: 92, aiDmg: 13, fireCd: 0.65, rubber: 8 },
+  cadet: { label: "Cadetto", aiBase: 129, aiDmg: 6,  fireCd: 1.5, rubber: 14 },
+  pilot: { label: "Pilota",  aiBase: 139, aiDmg: 9,  fireCd: 1.0, rubber: 11 },
+  ace:   { label: "Asso",    aiBase: 149, aiDmg: 13, fireCd: 0.65, rubber: 8 },
 };
 
 // Asset fotografici: metti i file in public/assets/ e vengono caricati in automatico
@@ -311,21 +311,20 @@ function initGame(container, cfg, ui) {
   const sun = new THREE.DirectionalLight(TR.sun, 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
 
-  /* ------ stelle ------ */
-  {
-    const n = 1600, pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const r = 1600 + Math.random() * 1800, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-      pos[i * 3] = r * Math.sin(ph) * Math.cos(th);
-      pos[i * 3 + 1] = r * Math.cos(ph);
-      pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    const m = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.85 });
-    m.fog = false;
-    scene.add(new THREE.Points(g, m));
+  /* ------ stelle (con star-warp dinamico) ------ */
+  const STAR_N = 1600;
+  const starPos = new Float32Array(STAR_N * 3);
+  for (let i = 0; i < STAR_N; i++) {
+    const r = 1600 + Math.random() * 1800, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+    starPos[i * 3] = r * Math.sin(ph) * Math.cos(th);
+    starPos[i * 3 + 1] = r * Math.cos(ph);
+    starPos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
   }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false, transparent: true, opacity: 0.85 });
+  starMat.fog = false;
+  scene.add(new THREE.Points(starGeo, starMat));
 
   /* ------ sfondo fotografico ------ */
   if (ASSETS.bg) {
@@ -494,7 +493,7 @@ function initGame(container, cfg, ui) {
   }
 
   /* ------ polvere spaziale (sensazione di velocità) ------ */
-  const DUST = 240;
+  const DUST = 380;
   const dustPos = new Float32Array(DUST * 3);
   {
     const sp0 = curve.getPointAt(0);
@@ -747,13 +746,13 @@ function initGame(container, cfg, ui) {
     if (player.alive && racing) {
       const ctrl = phase === "race" && !player.finished;
       const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
-      player.yawVel += ((-st * 1.75) - player.yawVel) * Math.min(1, dt * 7);
+      player.yawVel += ((-st * 1.95) - player.yawVel) * Math.min(1, dt * 8);
       player.yaw += player.yawVel * dt;
 
-      let target = ctrl && keys.brake ? 48 : 88;
+      let target = ctrl && keys.brake ? 85 : 145;
       let boosting = false;
       if (ctrl && keys.boost && player.boost > 0) {
-        boosting = true; target = 150 + (player.nitro > 0 ? 22 : 0);
+        boosting = true; target = 195 + (player.nitro > 0 ? 22 : 0);
         player.boost = Math.max(0, player.boost - 34 * dt);
       } else {
         player.boost = Math.min(100, player.boost + (player.nitro > 0 ? 22 : 11) * dt);
@@ -768,7 +767,7 @@ function initGame(container, cfg, ui) {
         player.mesh.material.rotation = player.yawVel * 0.45;
       }
       if (player.mesh.userData.glow) player.mesh.userData.glow.scale.setScalar(3 + player.speed * 0.035 + (boosting ? 2 : 0));
-      if (boosting && Math.random() < 0.7) burst(getPos(player).clone().addScaledVector(fwdV, -4), 2, new THREE.Color(0x55bbff), 18);
+      if (boosting && Math.random() < 0.9) burst(getPos(player).clone().addScaledVector(fwdV, -4), 5, new THREE.Color(0x55bbff), 18);
 
       // fuoco
       player.fireT -= dt;
@@ -870,7 +869,7 @@ function initGame(container, cfg, ui) {
       player.respawnT -= dt;
       if (player.respawnT <= 0) {
         player.alive = true; player.mesh.visible = true; player.inv = 2.4;
-        player.shields = 60; player.hull = 55; player.speed = 40; player.heat = 0; player.hot = false;
+        player.shields = 60; player.hull = 55; player.speed = 100; player.heat = 0; player.hot = false;
         const gi = ((player.gateIdx - 1) % NG + NG) % NG;
         const g = gates[gi];
         player.mesh.position.copy(g.pos);
@@ -1057,10 +1056,35 @@ function initGame(container, cfg, ui) {
     camera.lookAt(tmpV);
 
     // FOV dinamico: a tutta velocità il campo visivo si allarga (sensazione di velocità)
-    const fovT = THREE.MathUtils.clamp(70 + player.speed * 0.16, 72, 96);
+    const fovT = THREE.MathUtils.clamp(70 + player.speed * 0.16, 78, 108);
     if (Math.abs(camera.fov - fovT) > 0.05) {
-      camera.fov += (fovT - camera.fov) * Math.min(1, dt * 4);
+      camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6);
       camera.updateProjectionMatrix();
+    }
+
+    // star-warp: stelle si avvicinano alla camera quando speed > 130
+    if (player.speed > 130) {
+      const warpF = 0.4 * (player.speed / 145);
+      const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
+      for (let i = 0; i < STAR_N; i++) {
+        const sx = starPos[i*3] - cx, sy = starPos[i*3+1] - cy, sz = starPos[i*3+2] - cz;
+        const d2 = sx*sx + sy*sy + sz*sz;
+        if (d2 < 400*400) {
+          const r = 2000 + Math.random() * 1400, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+          starPos[i*3] = cx + r * Math.sin(ph) * Math.cos(th);
+          starPos[i*3+1] = cy + r * Math.cos(ph);
+          starPos[i*3+2] = cz + r * Math.sin(ph) * Math.sin(th);
+        } else {
+          const d = Math.sqrt(d2);
+          starPos[i*3] -= (sx / d) * warpF;
+          starPos[i*3+1] -= (sy / d) * warpF;
+          starPos[i*3+2] -= (sz / d) * warpF;
+        }
+      }
+      starGeo.attributes.position.needsUpdate = true;
+      starMat.size = 3.5;
+    } else {
+      starMat.size = 2;
     }
 
     // polvere: ricicla i puntini davanti al giocatore
@@ -1068,7 +1092,7 @@ function initGame(container, cfg, ui) {
       const dx = dustPos[i * 3] - player.mesh.position.x;
       const dy = dustPos[i * 3 + 1] - player.mesh.position.y;
       const dz = dustPos[i * 3 + 2] - player.mesh.position.z;
-      if (dx * dx + dy * dy + dz * dz > 90000) {
+      if (dx * dx + dy * dy + dz * dz > 60000) {
         dustPos[i * 3] = player.mesh.position.x + fwdV.x * 200 + (Math.random() - 0.5) * 260;
         dustPos[i * 3 + 1] = player.mesh.position.y + fwdV.y * 200 + (Math.random() - 0.5) * 260;
         dustPos[i * 3 + 2] = player.mesh.position.z + fwdV.z * 200 + (Math.random() - 0.5) * 260;
@@ -1124,6 +1148,7 @@ function initGame(container, cfg, ui) {
       boost: player.boost, heat: player.heat, hot: player.hot,
       nitro: player.nitro > 0,
       speed: Math.round(player.speed * 9),
+      boosting: !!player.boosting,
       kills: player.kills,
       dots,
     });
@@ -1643,6 +1668,10 @@ export default function WisiRacer() {
           <div className="wr-hud">
             {/* Hit flash overlay */}
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,30,30,0.35)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.3s", pointerEvents: "none" }} />
+            {/* Vignetta motion blur — intensità con la velocità */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: hud ? `inset 0 0 80px rgba(0,0,0,${Math.max(0, Math.min(0.7, (hud.speed / 9 - 120) / 75 * 0.7)).toFixed(3)})` : "none" }} />
+            {/* Boost overlay blu */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: hud && hud.boosting ? "inset 0 0 120px rgba(79,195,247,0.25)" : "none", transition: "box-shadow 0.15s" }} />
             {/* Mirino mobile — posizionato via onMirPos direttamente sul DOM */}
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
               <div ref={crosshairElRef} className="wr-mir" style={{ color: "#4fc3f7", transform: "translate(0px,0px)" }}>
