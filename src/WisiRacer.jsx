@@ -385,6 +385,19 @@ function initGame(container, cfg, ui) {
   const SAMPLES = 800;
   const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, "catmullrom", 0.6);
   const cPts = curve.getSpacedPoints(SAMPLES);
+
+  // Trova il tratto più rettilineo: minima variazione di direzione tra tangenti consecutive
+  let startT = 0;
+  {
+    let minCurv = Infinity;
+    const _d1 = new THREE.Vector3(), _d2 = new THREE.Vector3();
+    for (let i = 0; i < SAMPLES; i++) {
+      _d1.subVectors(cPts[i], cPts[(i - 1 + SAMPLES) % SAMPLES]).normalize();
+      _d2.subVectors(cPts[(i + 1) % SAMPLES], cPts[i]).normalize();
+      const curv = 1 - _d1.dot(_d2); // 0=dritto, 2=inversione
+      if (curv < minCurv) { minCurv = curv; startT = i / SAMPLES; }
+    }
+  }
   const len = curve.getLength();
 
   /* ------ strada luminosa: nastro largo + piloni verticali ai bordi ------ */
@@ -583,11 +596,11 @@ function initGame(container, cfg, ui) {
     yaw: 0, pitch: 0, yawVel: 0, speed: 0,
     boost: 100, heat: 0, hot: false, nitro: 0, alt: false, fireT: 0,
     shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
-    kills: 0, lapsDone: 0, t: 0, gateIdx: 1,
+    kills: 0, lapsDone: 0, t: startT, gateIdx: 1,
     finished: false, finishTime: 0, respawnT: 0, offMsgT: 0,
   };
   {
-    const p0 = curve.getPointAt(0), tan = curve.getTangentAt(0);
+    const p0 = curve.getPointAt(startT), tan = curve.getTangentAt(startT);
     player.mesh.position.copy(p0);
     player.yaw = Math.atan2(-tan.x, -tan.z);
   }
@@ -595,7 +608,7 @@ function initGame(container, cfg, ui) {
   racers.push(player);
 
   AI_ROSTER.forEach((a, i) => {
-    const t0 = (0.0045 * (i + 1)) % 1;
+    const t0 = (startT + 0.0045 * (i + 1)) % 1;
     const r = {
       isPlayer: false, name: a.name, color: a.color,
       mesh: makeShipVisual(a.color, false),
@@ -744,7 +757,7 @@ function initGame(container, cfg, ui) {
       cT -= dt;
       const c = Math.max(0, Math.ceil(cT));
       if (c !== lastC) { lastC = c; audio.count(c === 0); }
-      if (cT <= 0) { phase = "race"; ui.onMsg("VIA! 🚀"); }
+      if (cT <= 0) { phase = "race"; ui.onMsg("VIA! 🚀"); ui.onRaceStart(); }
     }
 
     if (phase === "over" || phase === "finished") {
@@ -1447,6 +1460,7 @@ export default function WisiRacer() {
     Object.keys(keysRef.current).forEach(k => (keysRef.current[k] = 0));
     keysRef.current.gyroActive = false;
     keysRef.current.gyroSteer = 0;
+    const calibReadyForGyro = { current: false };
     const ui = {
       onHud: h => setHud(h),
       onMsg: m => {
@@ -1469,6 +1483,14 @@ export default function WisiRacer() {
         setHitMsg(text);
         clearTimeout(hitMsgTimer.current);
         hitMsgTimer.current = setTimeout(() => setHitMsg(null), 600);
+      },
+      onRaceStart: () => {
+        calibReadyForGyro.current = true;
+        if (isTouch && gyroEnabledRef.current) {
+          setMsg("📱 Tieni il telefono in posizione di guida...");
+          clearTimeout(msgTimer.current);
+          // nessun auto-clear: sparisce quando la calibrazione finisce (2s)
+        }
       },
       onTrackMap: pts => setTrackMap(pts),
       onEnd: rows => {
@@ -1545,12 +1567,21 @@ export default function WisiRacer() {
         const now = performance.now() / 1000;
         if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
         gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
+        if (!calibReadyForGyro.current) {
+          // conto alla rovescia — filtra ma non calibrare, non sterzare
+          gyro.calibStart = null;
+          gyro.calibSamples = [];
+          keysRef.current.gyroSteer = 0;
+          return;
+        }
         if (!gyro.calibDone) {
           if (gyro.calibStart === null) gyro.calibStart = now;
           gyro.calibSamples.push(gyro.filteredBeta);
           if (now - gyro.calibStart >= 2) {
             gyro.betaRef = gyro.calibSamples.reduce((a, b) => a + b, 0) / gyro.calibSamples.length;
             gyro.calibDone = true;
+            setMsg(null);
+            clearTimeout(msgTimer.current);
           }
         }
         const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
