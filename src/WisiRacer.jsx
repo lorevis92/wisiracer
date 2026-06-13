@@ -1679,10 +1679,10 @@ export default function WisiRacer() {
               if (dx > 50)  { const i=(slideIdx-1+trackKeys.length)%trackKeys.length; setSlideIdx(i); setTrackKey(trackKeys[i]); }
             }}>
             {console.log('SLIDE BGImg:', TRACKS[trackKeys[slideIdx]].bgImg, 'assets.bgs:', assets.bgs[trackKeys[slideIdx]])||null}
+            <div style={{position:'absolute',inset:0,zIndex:0,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
             <img src={TRACKS[trackKeys[slideIdx]].bgImg} alt=""
-              style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}
-              onError={e=>console.log('IMG ERROR', e.target.src)} />
-            <div style={{position:'absolute',inset:0,zIndex:1,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
+              style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:1}}
+              onError={e=>{ e.target.style.display='none'; }} />
             <div style={{position:'absolute',inset:0,zIndex:2,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.1) 55%)'}} />
             <div style={{position:'absolute',bottom:44,left:22,right:22,zIndex:3}}>
               <div style={{fontFamily:'Orbitron,sans-serif',fontSize:24,fontWeight:900,color:'#fff',marginBottom:5,textShadow:'0 2px 12px rgba(0,0,0,0.9)'}}>
