@@ -1442,23 +1442,20 @@ export default function WisiRacer() {
       im.src = src;
     });
     (async () => {
-      const [shipIm, pilotIm, bgN, bgR] = await Promise.all([
+      const trackEntries = Object.entries(TRACKS);
+      const [shipIm, pilotIm, ...bgImgs] = await Promise.all([
         probeImg(ASSET_PATHS.ship), probeImg(ASSET_PATHS.pilot),
-        probeImg(TRACKS.nebula.bgImg), probeImg(TRACKS.ringworld.bgImg),
+        ...trackEntries.map(([, t]) => probeImg(t.bgImg)),
       ]);
       if (dead) return;
+      const bgs = {};
+      trackEntries.forEach(([k, t], i) => { bgs[k] = bgImgs[i] ? t.bgImg : null; });
       setAssets({
         ship: shipIm ? processShipImage(shipIm) : null,
         pilot: pilotIm ? ASSET_PATHS.pilot : null,
-        bgs: {
-          nebula: bgN ? TRACKS.nebula.bgImg : null,
-          ringworld: bgR ? TRACKS.ringworld.bgImg : null,
-        },
+        bgs,
       });
-      setVids({
-        nebula:    { intro: false, outro: false },
-        ringworld: { intro: false, outro: false },
-      });
+      setVids(Object.fromEntries(trackEntries.map(([k]) => [k, { intro: false, outro: false }])));
     })();
     return () => { dead = true; };
   }, []);
@@ -1706,7 +1703,6 @@ export default function WisiRacer() {
               if (dx < -50) { const i=(slideIdx+1)%trackKeys.length; setSlideIdx(i); setTrackKey(trackKeys[i]); }
               if (dx > 50)  { const i=(slideIdx-1+trackKeys.length)%trackKeys.length; setSlideIdx(i); setTrackKey(trackKeys[i]); }
             }}>
-            {console.log('SLIDE BGImg:', TRACKS[trackKeys[slideIdx]].bgImg, 'assets.bgs:', assets.bgs[trackKeys[slideIdx]])||null}
             <div style={{position:'absolute',inset:0,zIndex:0,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
             <img src={TRACKS[trackKeys[slideIdx]].bgImg} alt=""
               style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:1}}
