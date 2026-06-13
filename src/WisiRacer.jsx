@@ -650,7 +650,7 @@ function initGame(container, cfg, ui) {
 
   /* ------ stato gara ------ */
   let phase = "count", cT = 3.99, lastC = 4, overT = 0, ended = false;
-  let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0;
+  let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0, lastDebugT = -99;
   let lockedTarget = null;
   let paused = false, hudAcc = 0, animId = 0;
   const elimOrder = [];
@@ -662,12 +662,15 @@ function initGame(container, cfg, ui) {
   function closestT(pos, lastT) {
     let best = 0, bd = 1e18;
     const c0 = Math.floor(lastT * SAMPLES);
-    for (let k = -12; k <= 40; k++) {
+    for (let k = -60; k <= 60; k++) {
       const idx = ((c0 + k) % SAMPLES + SAMPLES) % SAMPLES;
       const d = pos.distanceToSquared(cPts[idx]);
       if (d < bd) { bd = d; best = idx; }
     }
-    return { t: best / SAMPLES, d: Math.sqrt(bd) };
+    let t = best / SAMPLES;
+    // wrap-around: se eravamo vicini a t=1 e il sample trovato è vicino a t=0
+    if (lastT > 0.85 && t < 0.15) t += 1.0;
+    return { t: t > 1 ? t - 1 : t, d: Math.sqrt(bd) };
   }
   let lastMsgT = -9;
   function throttleMsg(m) { if (elapsed - lastMsgT > 0.7) { lastMsgT = elapsed; ui.onMsg(m); } }
@@ -877,6 +880,14 @@ function initGame(container, cfg, ui) {
         player.offMsgT -= dt;
         if (player.offMsgT <= 0) { player.offMsgT = 1.6; ui.onMsg("⚠ FUORI ROTTA — torna sul percorso!"); }
       }
+      // Conteggio giri: wrap-around, uguale all'AI per coerenza con startT ≠ 0
+      if (forwardDelta(prevT, newT) > 0 && prevT > newT) {
+        player.lapsDone++;
+        if (RACEMODE && !player.finished && player.lapsDone < MD.laps) {
+          ui.onMsg(player.lapsDone === MD.laps - 1 ? "ULTIMO GIRO!" : "GIRO " + (player.lapsDone + 1) + "/" + MD.laps);
+          audio.pickup();
+        }
+      }
       if (RACEMODE && !player.finished) {
         const ng = player.gateIdx % NG;
         const dts = forwardDelta(prevT, newT);
@@ -884,16 +895,7 @@ function initGame(container, cfg, ui) {
         if (dts > 0 && dg >= -0.0005 && dg <= dts + 0.0005 && distC < 90) {
           player.gateIdx++;
           burst(gates[ng].pos, 10, new THREE.Color(0x66e0ff), 25);
-          if (ng === 0) {
-            player.lapsDone++;
-            if (player.lapsDone < MD.laps) {
-              ui.onMsg(player.lapsDone === MD.laps - 1 ? "ULTIMO GIRO!" : "GIRO " + (player.lapsDone + 1) + "/" + MD.laps);
-              audio.pickup();
-            }
-          }
         }
-      } else if (!RACEMODE) {
-        if (forwardDelta(prevT, newT) > 0 && prevT > newT) player.lapsDone++;
       }
 
       // collisioni asteroidi
@@ -1214,6 +1216,12 @@ function initGame(container, cfg, ui) {
       mirRef.current.x = Math.max(-120, Math.min(120, mirRef.current.x));
       mirRef.current.y = Math.max(-80, Math.min(80, mirRef.current.y));
       ui.onMirPos(mirRef.current.x, mirRef.current.y, aimLocked);
+    }
+
+    // debug posizione gara — rimuovere dopo il test
+    if (elapsed - lastDebugT > 3) {
+      lastDebugT = elapsed;
+      console.log('[pos]', racers.map(r => r.name + ' lap=' + r.lapsDone + ' t=' + r.t.toFixed(3) + ' prog=' + progressOf(r).toFixed(3) + ' pos=' + posOf(r) + (r.finished ? ' FINE' : '')).join(' | '));
     }
 
     audio.engine(player.speed, player.alive && racing, !!player.boosting, player.yawVel);
