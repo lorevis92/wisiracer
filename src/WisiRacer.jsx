@@ -1406,13 +1406,10 @@ export default function WisiRacer() {
       im.onload = () => res(im); im.onerror = () => res(null);
       im.src = src;
     });
-    const probeVid = src => fetch(src, { method: "HEAD" }).then(r => r.ok).catch(() => false);
     (async () => {
-      const [shipIm, pilotIm, bgN, bgR, inN, outN, inR, outR] = await Promise.all([
+      const [shipIm, pilotIm, bgN, bgR] = await Promise.all([
         probeImg(ASSET_PATHS.ship), probeImg(ASSET_PATHS.pilot),
         probeImg(TRACKS.nebula.bgImg), probeImg(TRACKS.ringworld.bgImg),
-        probeVid(TRACKS.nebula.intro), probeVid(TRACKS.nebula.outro),
-        probeVid(TRACKS.ringworld.intro), probeVid(TRACKS.ringworld.outro),
       ]);
       if (dead) return;
       setAssets({
@@ -1424,8 +1421,8 @@ export default function WisiRacer() {
         },
       });
       setVids({
-        nebula: { intro: inN, outro: outN },
-        ringworld: { intro: inR, outro: outR },
+        nebula:    { intro: false, outro: false },
+        ringworld: { intro: false, outro: false },
       });
     })();
     return () => { dead = true; };
