@@ -322,8 +322,10 @@ function initGame(container, cfg, ui) {
   /* ------ asset fotografici opzionali ------ */
   const ASSETS = cfg.assets || {};
   const texLoader = new THREE.TextureLoader();
-  const shipSrc = (cfg.pilot && cfg.pilot.shipImg) ? cfg.pilot.shipImg : ASSETS.ship;
-  const shipTex = shipSrc ? texLoader.load(shipSrc) : null;
+  const pilotTexMap = {};
+  for (const p of PILOTS) {
+    if (p.shipImg) pilotTexMap[p.id] = texLoader.load(p.shipImg);
+  }
 
   const W = () => container.clientWidth || 800;
   const H = () => container.clientHeight || 600;
@@ -593,10 +595,10 @@ function initGame(container, cfg, ui) {
   }
 
   /* ------ aspetto navicelle: foto (sprite) o 3D procedurale ------ */
-  function makeShipVisual(colorHex, isPlayer) {
-    if (shipTex) {
+  function makeShipVisual(colorHex, isPlayer, tex) {
+    if (tex) {
       const mat = new THREE.SpriteMaterial({
-        map: shipTex, transparent: true, depthWrite: false, alphaTest: 0.12,
+        map: tex, transparent: true, depthWrite: false, alphaTest: 0.12,
         color: isPlayer ? 0xffffff : colorHex,
       });
       const sp = new THREE.Sprite(mat);
@@ -612,7 +614,7 @@ function initGame(container, cfg, ui) {
   const PILOT = cfg.pilot || { name: "Whiskey", color: 0x4fc3f7 };
   const player = {
     isPlayer: true, name: PILOT.name, color: PILOT.color,
-    mesh: makeShipVisual(PILOT.color, true),
+    mesh: makeShipVisual(PILOT.color, true, pilotTexMap[PILOT.id]),
     yaw: 0, pitch: 0, yawVel: 0, speed: 0,
     boost: 100, heat: 0, hot: false, nitro: 0, alt: false, fireT: 0,
     shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
@@ -631,7 +633,7 @@ function initGame(container, cfg, ui) {
     const t0 = (startT + 0.0045 * (i + 1)) % 1;
     const r = {
       isPlayer: false, name: a.name, color: a.color,
-      mesh: makeShipVisual(a.color, false),
+      mesh: makeShipVisual(a.color, false, pilotTexMap[a.name.toLowerCase()]),
       t: t0, lat: (i % 2 ? 1 : -1) * (8 + Math.floor(i / 2) * 5),
       voff: -3 + Math.random() * 6, wf: 0.5 + Math.random(), phase: Math.random() * 6,
       base: DF.aiBase + (Math.random() * 8 - 4), curSpeed: DF.aiBase,
