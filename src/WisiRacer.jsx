@@ -432,7 +432,7 @@ function initGame(container, cfg, ui) {
     const roadTex = new THREE.CanvasTexture(rc);
     roadTex.wrapS = roadTex.wrapT = THREE.RepeatWrapping;
 
-    const HW = 16, STEP = 2, NSEG = Math.floor(SAMPLES / STEP);
+    const HW = 24, STEP = 2, NSEG = Math.floor(SAMPLES / STEP);
     const vts = new Float32Array((NSEG + 1) * 2 * 3);
     const uvs = new Float32Array((NSEG + 1) * 2 * 2);
     const idx = [];
@@ -491,7 +491,7 @@ function initGame(container, cfg, ui) {
     const t = i / NG;
     const p = curve.getPointAt(t), tan = curve.getTangentAt(t);
     const m = new THREE.Mesh(
-      new THREE.TorusGeometry(26, 1.1, 10, 36),
+      new THREE.TorusGeometry(34, 1.1, 10, 36),
       new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffffff : 0x35a8ff, transparent: true, opacity: 0.75 })
     );
     m.position.copy(p); m.lookAt(p.clone().add(tan));
@@ -508,7 +508,7 @@ function initGame(container, cfg, ui) {
     const p = curve.getPointAt(t), tan = curve.getTangentAt(t);
     const side = new THREE.Vector3().crossVectors(tan, UP).normalize();
     const vert = new THREE.Vector3().crossVectors(side, tan).normalize();
-    const off = (28 + Math.random() * 95) * (Math.random() < 0.5 ? 1 : -1);
+    const off = (36 + Math.random() * 95) * (Math.random() < 0.5 ? 1 : -1);
     const voff = -50 + Math.random() * 110;
     const r = 3 + Math.random() * 11;
     const m = new THREE.Mesh(rockGeo, rockMat);
