@@ -1679,27 +1679,27 @@ export default function WisiRacer() {
               if (dx > 50)  { const i=(slideIdx-1+trackKeys.length)%trackKeys.length; setSlideIdx(i); setTrackKey(trackKeys[i]); }
             }}>
             {console.log('SLIDE BGImg:', TRACKS[trackKeys[slideIdx]].bgImg, 'assets.bgs:', assets.bgs[trackKeys[slideIdx]])||null}
-            <div style={{position:'absolute',inset:0,zIndex:0,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
             <img src={TRACKS[trackKeys[slideIdx]].bgImg} alt=""
-              style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',transition:'opacity 0.3s',zIndex:1}}
+              style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}
               onError={e=>console.log('IMG ERROR', e.target.src)} />
-            <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.1) 55%)'}} />
-            <div style={{position:'absolute',bottom:44,left:22,right:22}}>
+            <div style={{position:'absolute',inset:0,zIndex:1,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
+            <div style={{position:'absolute',inset:0,zIndex:2,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.1) 55%)'}} />
+            <div style={{position:'absolute',bottom:44,left:22,right:22,zIndex:3}}>
               <div style={{fontFamily:'Orbitron,sans-serif',fontSize:24,fontWeight:900,color:'#fff',marginBottom:5,textShadow:'0 2px 12px rgba(0,0,0,0.9)'}}>
                 {TRACK_ICONS[trackKeys[slideIdx]]||'🚀'} {TRACKS[trackKeys[slideIdx]].label}
               </div>
               <div style={{fontSize:14,color:'#9fd6ff',textShadow:'0 1px 6px rgba(0,0,0,0.9)'}}>{TRACKS[trackKeys[slideIdx]].desc}</div>
             </div>
-            <div style={{position:'absolute',bottom:14,left:0,right:0,display:'flex',justifyContent:'center',gap:7}}>
+            <div style={{position:'absolute',bottom:14,left:0,right:0,display:'flex',justifyContent:'center',gap:7,zIndex:3}}>
               {trackKeys.map((k,i)=>(
                 <div key={k} onClick={()=>{setSlideIdx(i);setTrackKey(trackKeys[i]);}}
                   style={{width:i===slideIdx?22:7,height:7,borderRadius:4,background:i===slideIdx?'#4fc3f7':'rgba(255,255,255,0.28)',cursor:'pointer',transition:'all 0.25s'}} />
               ))}
             </div>
             <button onClick={()=>{const i=(slideIdx-1+trackKeys.length)%trackKeys.length;setSlideIdx(i);setTrackKey(trackKeys[i]);}}
-              style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2}}>‹</button>
+              style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:4}}>‹</button>
             <button onClick={()=>{const i=(slideIdx+1)%trackKeys.length;setSlideIdx(i);setTrackKey(trackKeys[i]);}}
-              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:2}}>›</button>
+              style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:4}}>›</button>
           </div>
 
           <div className="wr-label wr-disp">Asset grafici</div>
