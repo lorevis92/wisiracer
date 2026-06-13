@@ -604,6 +604,7 @@ function initGame(container, cfg, ui) {
   /* ------ stato gara ------ */
   let phase = "count", cT = 3.99, lastC = 4, overT = 0, ended = false;
   let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0;
+  let lockedTarget = null;
   let paused = false, hudAcc = 0, animId = 0;
   const elimOrder = [];
   const clock = new THREE.Clock();
@@ -637,7 +638,7 @@ function initGame(container, cfg, ui) {
     if (s < 0) { r.hull += s; r.shields = 0; } else r.shields = s;
     burst(getPos(r), 6, new THREE.Color(0xffaa55), 32);
     if (r.isPlayer) {
-      shake = Math.min(shake + 0.55, 1.3); ui.onExpr("hit"); ui.onHit(); audio.hit();
+      shake = Math.min(shake + 0.9, 1.8); ui.onExpr("hit"); ui.onHit(); audio.hit();
       if (r.shields <= 0 && r.hull < 35 && r.hull > 0) throttleMsg("SCAFO CRITICO!");
     }
     if (r.hull <= 0) destroy(r, attacker);
@@ -777,6 +778,10 @@ function initGame(container, cfg, ui) {
         const origin = getPos(player).clone().addScaledVector(fwdV, 3.5).addScaledVector(rightV, player.alt ? 2.3 : -2.3);
         origin.y += 0.2;
         const aimDir = new THREE.Vector3(mirRef.current.x / (W() / 2), -mirRef.current.y / (H() / 2), 1.0).unproject(camera).sub(camera.position).normalize();
+        if (lockedTarget && lockedTarget.alive) {
+          const toT = getPos(lockedTarget).clone().sub(origin).normalize();
+          if (aimDir.dot(toT) > 0.6) aimDir.lerp(toT, 0.22).normalize();
+        }
         fireLaser(player, origin, aimDir, 12, 0x7fdfff);
         audio.laser();
       }
@@ -794,16 +799,24 @@ function initGame(container, cfg, ui) {
       const { t: newT, d: distC } = closestT(getPos(player), prevT);
       player.t = newT;
 
-      // Altitudine automatica: segui il tracciato con +8 unità di quota
-      const trackY = cPts[Math.floor(newT * SAMPLES)].y + 8;
-      player.mesh.position.y += (trackY - player.mesh.position.y) * Math.min(1, dt * 3.5);
+      // Altitudine automatica: segui il tracciato con +5 unità di quota
+      const trackY = cPts[Math.floor(newT * SAMPLES)].y + 5;
+      player.mesh.position.y += (trackY - player.mesh.position.y) * Math.min(1, dt * 6.5);
+
+      // Attrazione laterale verso il centro del tracciato (magnetic road)
+      if (distC > 18 && distC < 45) {
+        const tPt = cPts[Math.floor(newT * SAMPLES)];
+        const lf = Math.min(1, dt * 2.8);
+        player.mesh.position.x += (tPt.x - player.mesh.position.x) * lf;
+        player.mesh.position.z += (tPt.z - player.mesh.position.z) * lf;
+      }
 
       // Orientamento visivo: inclina la navicella verso la pendenza del tracciato davanti
       if (!player.mesh.userData.sprite) {
         const lookIdx = (Math.floor(newT * SAMPLES) + 6) % SAMPLES;
         tmpV.set(
           player.mesh.position.x + fwdV.x * 14,
-          cPts[lookIdx].y + 8,
+          cPts[lookIdx].y + 5,
           player.mesh.position.z + fwdV.z * 14
         );
         player.mesh.lookAt(tmpV);
@@ -954,13 +967,22 @@ function initGame(container, cfg, ui) {
           if (L.mesh.position.distanceTo(getPos(r)) < 6.5) {
             damage(r, L.dmg, L.owner);
             burst(L.mesh.position, 5, new THREE.Color(L.mesh.material.color.getHex()), 25);
-            // Flash esplosione al punto di impatto
             const hitPos = L.mesh.position.clone();
-            const flashMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffaa33, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
-            const flash = new THREE.Sprite(flashMat); flash.position.copy(hitPos); flash.scale.setScalar(18); scene.add(flash);
-            const ringMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffffff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
-            const ring = new THREE.Sprite(ringMat); ring.position.copy(hitPos); ring.scale.setScalar(8); scene.add(ring);
-            impactEffects.push({ flash, flashMat, ring, ringMat, t: 0 });
+            if (L.owner.isPlayer) {
+              const flashMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffdd00, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+              const flash = new THREE.Sprite(flashMat); flash.position.copy(hitPos); flash.scale.setScalar(22); scene.add(flash);
+              const ringMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffffff, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+              const ring = new THREE.Sprite(ringMat); ring.position.copy(hitPos); ring.scale.setScalar(6); scene.add(ring);
+              impactEffects.push({ flash, flashMat, ring, ringMat, t: 0, big: true });
+              ui.onHitMsg("HIT — " + r.name.toUpperCase());
+              if (navigator.vibrate) navigator.vibrate(60);
+            } else {
+              const flashMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffaa33, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
+              const flash = new THREE.Sprite(flashMat); flash.position.copy(hitPos); flash.scale.setScalar(14); scene.add(flash);
+              const ringMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffffff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+              const ring = new THREE.Sprite(ringMat); ring.position.copy(hitPos); ring.scale.setScalar(6); scene.add(ring);
+              impactEffects.push({ flash, flashMat, ring, ringMat, t: 0, big: false });
+            }
             dead = true; break;
           }
         }
@@ -975,14 +997,24 @@ function initGame(container, cfg, ui) {
     for (let i = impactEffects.length - 1; i >= 0; i--) {
       const fx = impactEffects[i];
       fx.t += dt;
-      const p = Math.min(fx.t / 0.12, 1);
-      fx.flashMat.opacity = 1 - p;
-      fx.ringMat.opacity = 0.8 * (1 - p);
-      fx.ring.scale.setScalar(8 + 16 * p);
-      if (fx.t >= 0.15) {
-        scene.remove(fx.flash); fx.flashMat.dispose();
-        scene.remove(fx.ring); fx.ringMat.dispose();
-        impactEffects.splice(i, 1);
+      if (fx.big) {
+        if (fx.t < 0.08) {
+          fx.flash.scale.setScalar(22 + 16 * (fx.t / 0.08));
+          fx.flashMat.opacity = 1;
+        } else {
+          fx.flash.scale.setScalar(38);
+          fx.flashMat.opacity = Math.max(0, 1 - (fx.t - 0.08) / 0.10);
+        }
+        const rp = Math.min(fx.t / 0.18, 1);
+        fx.ring.scale.setScalar(6 + 26 * rp);
+        fx.ringMat.opacity = 1 - rp;
+        if (fx.t >= 0.18) { scene.remove(fx.flash); fx.flashMat.dispose(); scene.remove(fx.ring); fx.ringMat.dispose(); impactEffects.splice(i, 1); }
+      } else {
+        const p = Math.min(fx.t / 0.12, 1);
+        fx.flashMat.opacity = 1 - p;
+        fx.ringMat.opacity = 0.6 * (1 - p);
+        fx.ring.scale.setScalar(6 + 8 * p);
+        if (fx.t >= 0.15) { scene.remove(fx.flash); fx.flashMat.dispose(); scene.remove(fx.ring); fx.ringMat.dispose(); impactEffects.splice(i, 1); }
       }
     }
 
@@ -1107,20 +1139,29 @@ function initGame(container, cfg, ui) {
       mirRef.current.y += (0 - mirRef.current.y) * fac;
       camera.updateMatrixWorld();
       const CW = W(), CH = H();
-      let bestD = 16, bestX = mirRef.current.x, bestY = mirRef.current.y, aimLocked = false;
+      const aimFwdX = -Math.sin(player.yaw), aimFwdZ = -Math.cos(player.yaw);
+      const pPos = getPos(player);
+      let bestD = 60, bestX = mirRef.current.x, bestY = mirRef.current.y, aimLocked = false;
+      let nextLocked = null;
       if (player.alive) {
         for (const r of racers) {
           if (!r.alive || r.isPlayer) continue;
-          projV.copy(getPos(r)).project(camera);
+          const rPos = getPos(r);
+          const ex = rPos.x - pPos.x, ey = rPos.y - pPos.y, ez = rPos.z - pPos.z;
+          if (ex * ex + ey * ey + ez * ez > 320 * 320) continue;
+          const exzLen = Math.sqrt(ex * ex + ez * ez);
+          if (exzLen > 0.001 && (ex / exzLen * aimFwdX + ez / exzLen * aimFwdZ) < 0.82) continue;
+          projV.copy(rPos).project(camera);
           if (projV.z >= 1) continue;
           const sx = projV.x * (CW / 2), sy = -projV.y * (CH / 2);
           const d = Math.sqrt((sx - mirRef.current.x) ** 2 + (sy - mirRef.current.y) ** 2);
-          if (d < bestD) { bestD = d; bestX = sx; bestY = sy; }
+          if (d < bestD) { bestD = d; bestX = sx; bestY = sy; nextLocked = r; }
         }
       }
-      if (bestD < 16) {
-        mirRef.current.x += (bestX - mirRef.current.x) * 0.18;
-        mirRef.current.y += (bestY - mirRef.current.y) * 0.18;
+      lockedTarget = nextLocked;
+      if (nextLocked) {
+        mirRef.current.x += (bestX - mirRef.current.x) * 0.42;
+        mirRef.current.y += (bestY - mirRef.current.y) * 0.42;
         aimLocked = true;
       }
       mirRef.current.x = Math.max(-120, Math.min(120, mirRef.current.x));
@@ -1352,6 +1393,8 @@ export default function WisiRacer() {
   const [gyroActive, setGyroActive] = useState(false);
   const [hitFlash, setHitFlash] = useState(false);
   const hitFlashTimer = useRef(null);
+  const [hitMsg, setHitMsg] = useState(null);
+  const hitMsgTimer = useRef(null);
   const mirRef = useRef({ x: 0, y: 0 });
   const crosshairElRef = useRef(null);
 
@@ -1408,8 +1451,13 @@ export default function WisiRacer() {
       onHit: () => {
         setHitFlash(true);
         clearTimeout(hitFlashTimer.current);
-        hitFlashTimer.current = setTimeout(() => setHitFlash(false), 180);
-        if (navigator.vibrate) navigator.vibrate(120);
+        hitFlashTimer.current = setTimeout(() => setHitFlash(false), 220);
+        if (navigator.vibrate) navigator.vibrate([80, 30, 80]);
+      },
+      onHitMsg: text => {
+        setHitMsg(text);
+        clearTimeout(hitMsgTimer.current);
+        hitMsgTimer.current = setTimeout(() => setHitMsg(null), 600);
       },
       onTrackMap: pts => setTrackMap(pts),
       onEnd: rows => {
@@ -1521,6 +1569,7 @@ export default function WisiRacer() {
       clearTimeout(msgTimer.current);
       clearTimeout(exprTimer.current);
       clearTimeout(hitFlashTimer.current);
+      clearTimeout(hitMsgTimer.current);
       if (!isTouch) {
         const el = mountRef.current;
         if (el) { el.removeEventListener("mousemove", onMouseMove); el.removeEventListener("mousedown", onMouseDown); el.removeEventListener("mouseup", onMouseUp); }
@@ -1667,7 +1716,7 @@ export default function WisiRacer() {
           <div ref={mountRef} style={{ position: "absolute", inset: 0 }} />
           <div className="wr-hud">
             {/* Hit flash overlay */}
-            <div style={{ position: "absolute", inset: 0, background: "rgba(255,30,30,0.35)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.3s", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", inset: 0, background: "rgba(255,0,0,0.45)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.22s", pointerEvents: "none" }} />
             {/* Vignetta motion blur — intensità con la velocità */}
             <div style={{ position: "absolute", inset: 0, pointerEvents: "none", boxShadow: hud ? `inset 0 0 80px rgba(0,0,0,${Math.max(0, Math.min(0.7, (hud.speed / 9 - 120) / 75 * 0.7)).toFixed(3)})` : "none" }} />
             {/* Boost overlay blu */}
@@ -1686,6 +1735,7 @@ export default function WisiRacer() {
             </div>
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
+            {hitMsg && <div className="wr-msg" style={{ color: "#ff6644", textShadow: "0 0 18px rgba(255,80,0,.9)", top: "10%", bottom: "auto" }}>{hitMsg}</div>}
             {hud && hud.paused && (
               <div className="wr-count" style={{ fontSize: 42, flexDirection: "column", gap: 10 }}>
                 PAUSA<div style={{ fontSize: 14, color: "#7fb6e8", fontFamily: "Rajdhani" }}>premi ESC per riprendere</div>
@@ -1747,10 +1797,10 @@ export default function WisiRacer() {
                       <div className="wr-tbtn" {...touch("right")}>▶</div>
                     </div>
                   )}
-                  <div className="wr-tbtn big" {...touch("boost")}>BOOST</div>
+                  <div className="wr-tbtn big" {...touch("fire")} style={{ borderColor: "#4fc3f7", color: "#eaf6ff", width: 90, height: 90 }}>FUOCO</div>
                 </div>
                 <PilotFace expr={expr} size={80} photo={assets.pilot} />
-                <div className="wr-tbtn big" {...touch("fire")} style={{ pointerEvents: "auto", borderColor: "#4fc3f7", color: "#eaf6ff", width: 90, height: 90 }}>FUOCO</div>
+                <div className="wr-tbtn big" {...touch("boost")} style={{ pointerEvents: "auto" }}>BOOST</div>
               </div>
             )}
           </div>
