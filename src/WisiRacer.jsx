@@ -282,6 +282,7 @@ function makeAudio() {
 function initGame(container, cfg, ui) {
   const TR = TRACKS[cfg.track], MD = MODES[cfg.mode], DF = DIFFS[cfg.diff];
   const keys = cfg.keys;
+  const mirRef = cfg.mirRef || { current: { x: 0, y: 0 } };
   const RESPAWN = cfg.mode === "grand_prix";
   const RACEMODE = MD.laps > 0;
   const TIMED = cfg.mode === "timed";
@@ -723,7 +724,7 @@ function initGame(container, cfg, ui) {
   window.addEventListener("resize", onResize);
 
   /* ------ loop ------ */
-  const fwdV = new THREE.Vector3(), rightV = new THREE.Vector3(), tmpV = new THREE.Vector3();
+  const fwdV = new THREE.Vector3(), rightV = new THREE.Vector3(), tmpV = new THREE.Vector3(), projV = new THREE.Vector3();
 
   function update(dt) {
     elapsed += dt;
@@ -776,7 +777,8 @@ function initGame(container, cfg, ui) {
         rightV.crossVectors(fwdV, UP).normalize();
         const origin = getPos(player).clone().addScaledVector(fwdV, 3.5).addScaledVector(rightV, player.alt ? 2.3 : -2.3);
         origin.y += 0.2;
-        fireLaser(player, origin, fwdV.clone(), 12, 0x7fdfff);
+        const aimDir = new THREE.Vector3(mirRef.current.x / (W() / 2), -mirRef.current.y / (H() / 2), 1.0).unproject(camera).sub(camera.position).normalize();
+        fireLaser(player, origin, aimDir, 12, 0x7fdfff);
         audio.laser();
       }
       player.heat = Math.max(0, player.heat - 30 * dt);
@@ -1074,6 +1076,34 @@ function initGame(container, cfg, ui) {
     }
     dustGeo.attributes.position.needsUpdate = true;
 
+    // Mirino: lerp verso centro + auto-aim (screen-space) + notifica UI a 60fps
+    {
+      const fac = Math.min(1, dt * 3.6);
+      mirRef.current.x += (0 - mirRef.current.x) * fac;
+      mirRef.current.y += (0 - mirRef.current.y) * fac;
+      camera.updateMatrixWorld();
+      const CW = W(), CH = H();
+      let bestD = 16, bestX = mirRef.current.x, bestY = mirRef.current.y, aimLocked = false;
+      if (player.alive) {
+        for (const r of racers) {
+          if (!r.alive || r.isPlayer) continue;
+          projV.copy(getPos(r)).project(camera);
+          if (projV.z >= 1) continue;
+          const sx = projV.x * (CW / 2), sy = -projV.y * (CH / 2);
+          const d = Math.sqrt((sx - mirRef.current.x) ** 2 + (sy - mirRef.current.y) ** 2);
+          if (d < bestD) { bestD = d; bestX = sx; bestY = sy; }
+        }
+      }
+      if (bestD < 16) {
+        mirRef.current.x += (bestX - mirRef.current.x) * 0.18;
+        mirRef.current.y += (bestY - mirRef.current.y) * 0.18;
+        aimLocked = true;
+      }
+      mirRef.current.x = Math.max(-120, Math.min(120, mirRef.current.x));
+      mirRef.current.y = Math.max(-80, Math.min(80, mirRef.current.y));
+      ui.onMirPos(mirRef.current.x, mirRef.current.y, aimLocked);
+    }
+
     audio.engine(player.speed, player.alive && racing, !!player.boosting, player.yawVel);
   }
 
@@ -1082,16 +1112,6 @@ function initGame(container, cfg, ui) {
       const [x, y] = nrm(getPos(r));
       return { x, y, c: "#" + r.color.toString(16).padStart(6, "0"), p: !!r.isPlayer };
     });
-    const aimFwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-    let aimLocked = false;
-    if (player.alive) {
-      for (const r of racers) {
-        if (!r.alive || r.isPlayer) continue;
-        const to = getPos(r).clone().sub(getPos(player));
-        const d = to.length();
-        if (d < 200 && d > 0) { to.normalize(); if (to.dot(aimFwd) > 0.92) { aimLocked = true; break; } }
-      }
-    }
     ui.onHud({
       count: phase === "count" ? Math.max(0, Math.ceil(cT)) : 0,
       paused,
@@ -1105,7 +1125,7 @@ function initGame(container, cfg, ui) {
       nitro: player.nitro > 0,
       speed: Math.round(player.speed * 9),
       kills: player.kills,
-      dots, aimLocked,
+      dots,
     });
   }
 
@@ -1174,6 +1194,9 @@ const CSS = `
 .wr-table tr.me{background:rgba(79,195,247,.12);}
 .wr-hint{font-size:13px;color:#6fa3cf;max-width:640px;text-align:center;line-height:1.5;}
 .wr-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;}
+.wr-mir{position:absolute;pointer-events:none;}
+.wr-mir-lock svg{animation:mirpulse 0.26s ease-in-out infinite alternate;}
+@keyframes mirpulse{from{transform:scale(1);opacity:0.85}to{transform:scale(1.16);opacity:1}}
 `;
 
 function ShipIcon({ size = 90, accent = "#4fc3f7" }) {
@@ -1304,6 +1327,8 @@ export default function WisiRacer() {
   const [gyroActive, setGyroActive] = useState(false);
   const [hitFlash, setHitFlash] = useState(false);
   const hitFlashTimer = useRef(null);
+  const mirRef = useRef({ x: 0, y: 0 });
+  const crosshairElRef = useRef(null);
 
   // Preloader automatico: cerca gli asset in /assets e usa quelli che trova
   useEffect(() => {
@@ -1367,11 +1392,60 @@ export default function WisiRacer() {
         const v = vids[trackKey];
         setScreen(v && v.outro ? "outro" : "results");
       },
+      onMirPos: (x, y, locked) => {
+        const el = crosshairElRef.current;
+        if (!el) return;
+        el.style.transform = `translate(${x}px, ${y}px)`;
+        el.style.color = locked ? "#ff4444" : "#4fc3f7";
+        el.className = locked ? "wr-mir wr-mir-lock" : "wr-mir";
+      },
     };
+    mirRef.current = { x: 0, y: 0 };
     const cleanup = initGame(mountRef.current, {
       track: trackKey, mode: modeKey, diff: diffKey, keys: keysRef.current,
       assets: { ship: assetsRef.current.ship, bg: assetsRef.current.bgs ? assetsRef.current.bgs[trackKey] : null },
+      mirRef,
     }, ui);
+
+    // Mouse (desktop): mirino segue il cursore, click sinistro = fuoco
+    const onMouseMove = e => {
+      const rect = mountRef.current ? mountRef.current.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      mirRef.current.x = Math.max(-120, Math.min(120, e.clientX - (rect.left + rect.width / 2)));
+      mirRef.current.y = Math.max(-80, Math.min(80, e.clientY - (rect.top + rect.height / 2)));
+    };
+    const onMouseDown = e => { if (e.button === 0) keysRef.current.fire = 1; };
+    const onMouseUp   = e => { if (e.button === 0) keysRef.current.fire = 0; };
+    if (!isTouch) {
+      const el = mountRef.current;
+      if (el) { el.addEventListener("mousemove", onMouseMove); el.addEventListener("mousedown", onMouseDown); el.addEventListener("mouseup", onMouseUp); }
+    }
+
+    // Touch (mobile): zona destra (x > 40%) = drag mirino
+    let aimTouchId = null, aimBase = { x: 0, y: 0, mx: 0, my: 0 };
+    const onTouchStart = e => {
+      const W = window.innerWidth;
+      for (const t of e.changedTouches) {
+        if (t.clientX > W * 0.4 && aimTouchId === null) {
+          aimTouchId = t.identifier;
+          aimBase = { x: t.clientX, y: t.clientY, mx: mirRef.current.x, my: mirRef.current.y };
+        }
+      }
+    };
+    const onTouchMove = e => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === aimTouchId) {
+          mirRef.current.x = Math.max(-120, Math.min(120, aimBase.mx + t.clientX - aimBase.x));
+          mirRef.current.y = Math.max(-80, Math.min(80, aimBase.my + t.clientY - aimBase.y));
+        }
+      }
+    };
+    const onTouchEnd = e => { for (const t of e.changedTouches) { if (t.identifier === aimTouchId) aimTouchId = null; } };
+    if (isTouch) {
+      window.addEventListener("touchstart", onTouchStart, { passive: true });
+      window.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("touchend", onTouchEnd, { passive: true });
+      window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    }
 
     let gyroCleanup = null;
     if (isTouch && gyroEnabledRef.current) {
@@ -1422,6 +1496,16 @@ export default function WisiRacer() {
       clearTimeout(msgTimer.current);
       clearTimeout(exprTimer.current);
       clearTimeout(hitFlashTimer.current);
+      if (!isTouch) {
+        const el = mountRef.current;
+        if (el) { el.removeEventListener("mousemove", onMouseMove); el.removeEventListener("mousedown", onMouseDown); el.removeEventListener("mouseup", onMouseUp); }
+      }
+      if (isTouch) {
+        window.removeEventListener("touchstart", onTouchStart);
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", onTouchEnd);
+        window.removeEventListener("touchcancel", onTouchEnd);
+      }
     };
   }, [screen]);
 
@@ -1559,18 +1643,18 @@ export default function WisiRacer() {
           <div className="wr-hud">
             {/* Hit flash overlay */}
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,30,30,0.35)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.3s", pointerEvents: "none" }} />
-            {/* Mirino auto-aim */}
-            {hud && (
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-                <svg width={hud.aimLocked ? 36 : 28} height={hud.aimLocked ? 36 : 28} viewBox="0 0 36 36" style={{ transition: "width 0.08s, height 0.08s" }}>
-                  <line x1="18" y1="2" x2="18" y2="11" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
-                  <line x1="18" y1="25" x2="18" y2="34" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
-                  <line x1="2" y1="18" x2="11" y2="18" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
-                  <line x1="25" y1="18" x2="34" y2="18" stroke={hud.aimLocked ? "#ff4444" : "#4fc3f7"} strokeWidth="1.5" opacity={hud.aimLocked ? 1 : 0.7} />
-                  {hud.aimLocked && <circle cx="18" cy="18" r="5" fill="none" stroke="#ff4444" strokeWidth="1.5" />}
+            {/* Mirino mobile — posizionato via onMirPos direttamente sul DOM */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+              <div ref={crosshairElRef} className="wr-mir" style={{ color: "#4fc3f7", transform: "translate(0px,0px)" }}>
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="10" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
+                  <line x1="22" y1="2"  x2="22" y2="13" stroke="currentColor" strokeWidth="1.6" />
+                  <line x1="22" y1="31" x2="22" y2="42" stroke="currentColor" strokeWidth="1.6" />
+                  <line x1="2"  y1="22" x2="13" y2="22" stroke="currentColor" strokeWidth="1.6" />
+                  <line x1="31" y1="22" x2="42" y2="22" stroke="currentColor" strokeWidth="1.6" />
                 </svg>
               </div>
-            )}
+            </div>
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
             {hud && hud.paused && (
@@ -1637,7 +1721,7 @@ export default function WisiRacer() {
                   <div className="wr-tbtn big" {...touch("boost")}>BOOST</div>
                 </div>
                 <PilotFace expr={expr} size={80} photo={assets.pilot} />
-                <div className="wr-tbtn big" {...touch("fire")} style={{ pointerEvents: "auto", borderColor: "#4fc3f7", color: "#eaf6ff" }}>FUOCO</div>
+                <div className="wr-tbtn big" {...touch("fire")} style={{ pointerEvents: "auto", borderColor: "#4fc3f7", color: "#eaf6ff", width: 90, height: 90 }}>FUOCO</div>
               </div>
             )}
           </div>
