@@ -602,7 +602,7 @@ function initGame(container, cfg, ui) {
         color: isPlayer ? 0xffffff : colorHex,
       });
       const sp = new THREE.Sprite(mat);
-      sp.scale.set(16, 16, 1);
+      sp.scale.set(22, 22, 1);
       sp.userData.sprite = true;
       return sp;
     }
@@ -627,7 +627,7 @@ function initGame(container, cfg, ui) {
     player.yaw = Math.atan2(-tan.x, -tan.z);
   }
   scene.add(player.mesh);
-  if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1.4);
+  if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1.8);
   racers.push(player);
 
   const aiPilots = PILOTS.filter(p => p.id !== PILOT.id);
@@ -1127,14 +1127,14 @@ function initGame(container, cfg, ui) {
     shake = Math.max(0, shake - dt * 2.2);
     const cp2 = Math.cos(player.pitch);
     fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(player.pitch), -Math.cos(player.yaw) * cp2);
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, -9);
-    tmpV.y += 3.2;
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, -5);
+    tmpV.y += 2.5;
     camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
       camera.position.y += (Math.random() - 0.5) * shake * 1.6;
     }
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, 18);
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, 8);
     camera.lookAt(tmpV);
 
     // FOV dinamico: a tutta velocità il campo visivo si allarga (sensazione di velocità)
