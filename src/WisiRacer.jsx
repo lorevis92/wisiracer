@@ -654,6 +654,7 @@ function initGame(container, cfg, ui) {
   let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0, lastDebugT = -99;
   let lockedTarget = null;
   let paused = false, hudAcc = 0, animId = 0;
+  let currentCamDist = -11;
   const elimOrder = [];
   const clock = new THREE.Clock();
 
@@ -1127,8 +1128,10 @@ function initGame(container, cfg, ui) {
     shake = Math.max(0, shake - dt * 2.2);
     const cp2 = Math.cos(player.pitch);
     fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(player.pitch), -Math.cos(player.yaw) * cp2);
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, -5);
-    tmpV.y += 2.5;
+    const camDistTarget = player.boosting ? -6 : -11;
+    currentCamDist += (camDistTarget - currentCamDist) * Math.min(1, dt * 3);
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, currentCamDist);
+    tmpV.y += 3.5;
     camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
