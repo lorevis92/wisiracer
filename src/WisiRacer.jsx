@@ -337,7 +337,7 @@ function initGame(container, cfg, ui) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(TR.bg);
   scene.fog = new THREE.FogExp2(TR.fog, TR.fogD);
-  const camera = new THREE.PerspectiveCamera(72, W() / H(), 0.1, 6000);
+  const camera = new THREE.PerspectiveCamera(78, W() / H(), 0.1, 6000);
 
   scene.add(new THREE.AmbientLight(TR.amb, 0.6));
   const sun = new THREE.DirectionalLight(TR.sun, 1.1);
@@ -602,7 +602,7 @@ function initGame(container, cfg, ui) {
         color: isPlayer ? 0xffffff : colorHex,
       });
       const sp = new THREE.Sprite(mat);
-      sp.scale.set(11.5, 11.5, 1);
+      sp.scale.set(16, 16, 1);
       sp.userData.sprite = true;
       return sp;
     }
@@ -627,6 +627,7 @@ function initGame(container, cfg, ui) {
     player.yaw = Math.atan2(-tan.x, -tan.z);
   }
   scene.add(player.mesh);
+  if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1.4);
   racers.push(player);
 
   const aiPilots = PILOTS.filter(p => p.id !== PILOT.id);
@@ -1126,18 +1127,18 @@ function initGame(container, cfg, ui) {
     shake = Math.max(0, shake - dt * 2.2);
     const cp2 = Math.cos(player.pitch);
     fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(player.pitch), -Math.cos(player.yaw) * cp2);
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, -14);
-    tmpV.y += 4.8;
-    camera.position.lerp(tmpV, 1 - Math.exp(-7 * dt));
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, -9);
+    tmpV.y += 3.2;
+    camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
       camera.position.y += (Math.random() - 0.5) * shake * 1.6;
     }
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, 24);
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, 18);
     camera.lookAt(tmpV);
 
     // FOV dinamico: a tutta velocità il campo visivo si allarga (sensazione di velocità)
-    const fovT = THREE.MathUtils.clamp(70 + player.speed * 0.16, 78, 108);
+    const fovT = THREE.MathUtils.clamp(70 + player.speed * 0.16, 80, 106);
     if (Math.abs(camera.fov - fovT) > 0.05) {
       camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6);
       camera.updateProjectionMatrix();
