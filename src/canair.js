@@ -6,9 +6,9 @@ export const CANAIR = {
   city: true, halfWidth: 56, bg: 0x0c1327, fog: 0x20263b,
   fogD: 0.00075, amb: 0xa8bed8, sun: 0xffd2a3,
   nebula: false, planet: false, rockColor: 0x555555, rocks: 0,
-  pts: [[0,0,0],[0,0,-220],[100,0,-390],[330,2,-410],
-    [480,8,-250],[440,22,-30],[570,32,150],[430,32,330],
-    [190,18,360],[80,2,230],[-140,0,210],[-210,0,70]],
+  pts: [[0,0,0],[0,0,-220],[0,0,-440],[150,0,-620],[400,2,-620],
+    [600,8,-420],[580,22,-140],[710,32,80],[590,32,350],
+    [380,18,520],[150,2,600],[0,0,440],[0,0,220]],
 };
 
 // Scene-native assets: no external images, video billboards, or runtime downloads.
@@ -16,7 +16,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   const HW = track.halfWidth;
   const group = new THREE.Group(); group.name = 'Canair Afterdark'; scene.add(group);
   const stone = new THREE.MeshStandardMaterial({color:0x303747, roughness:0.86});
-  const road = new THREE.MeshStandardMaterial({color:0x293340, roughness:0.5, metalness:0.25, side:THREE.DoubleSide});
+  const road = new THREE.MeshStandardMaterial({color:0x697988, emissive:0x263442, emissiveIntensity:0.35, roughness:0.9, metalness:0.02, side:THREE.DoubleSide});
   const gold = new THREE.MeshBasicMaterial({color:0xffce85});
   const cyan = new THREE.MeshBasicMaterial({color:0x65d9dd});
   const pink = new THREE.MeshBasicMaterial({color:0xf66b83});
@@ -47,7 +47,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   ribbon(0,HW*2,-7,road);
   for(const sign of [-1,1]) {
     ribbon(sign*(HW+5),10,-6.8,stone);
-    ribbon(sign*(HW-4),0.65,-6.85,sign===1?cyan:gold);
+    ribbon(sign*(HW-4),2.4,-6.85,sign===1?cyan:gold);
     const wallVertices=[],wallIndices=[];
     for(let i=0;i<=800;i++) {
       const {p,side}=frame(i/800);p.addScaledVector(side,sign*HW);
@@ -56,13 +56,13 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
     }
     const wallGeo=new THREE.BufferGeometry();wallGeo.setAttribute('position',new THREE.Float32BufferAttribute(wallVertices,3));
     wallGeo.setIndex(wallIndices);wallGeo.computeVertexNormals();
-    const wallMat=stone.clone();wallMat.side=THREE.DoubleSide;
+    const wallMat=new THREE.MeshStandardMaterial({color:0xd2b58b,emissive:0x6e4b21,emissiveIntensity:0.4,roughness:0.9,side:THREE.DoubleSide});
     group.add(new THREE.Mesh(wallGeo,wallMat));
     const points=Array.from({length:401},(_,i)=>{const {p,side}=frame(i/400);return p.clone().addScaledVector(side,sign*HW).add(new THREE.Vector3(0,7,0));});
     const railCurve=new THREE.CatmullRomCurve3(points.slice(0,-1),true);
     group.add(new THREE.Mesh(new THREE.TubeGeometry(railCurve,800,1.1,5,true),stone));
     const lightPoints=points.slice(0,-1).map(p=>p.clone().add(new THREE.Vector3(0,1.1,0)));
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lightPoints,true),800,0.22,4,true),sign===1?cyan:gold));
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lightPoints,true),800,0.5,4,true),sign===1?cyan:gold));
   }
   const ground=box(new THREE.Vector3(180,-34,0),[2400,8,2100],new THREE.MeshStandardMaterial({color:0x101b22,roughness:0.95}));
   ground.name='City foundations';
@@ -147,7 +147,8 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
 export const PRACTICE = {
   ...CANAIR, label: 'Prova guida', practice: true, halfWidth: 64,
   desc: 'Pista larga · curva veloce, tornante e esse. Prova sterzo, freno, boost e sparo.',
-  pts: [[0,0,0],[0,0,-220],[110,0,-380],[350,0,-380],
-    [520,0,-240],[520,0,-40],[420,0,100],[520,0,250],
-    [390,0,410],[120,0,410],[-160,0,290],[-180,0,90]],
+  bg: 0x536e88, fog: 0x71879b, fogD: 0.00035, amb: 0xe4efff, sun: 0xfff1d9,
+  pts: [[0,0,0],[0,0,-220],[0,0,-440],[150,0,-620],[420,0,-620],
+    [650,0,-420],[650,0,-160],[530,0,40],[650,0,260],
+    [460,0,490],[180,0,600],[0,0,440],[0,0,220]],
 };

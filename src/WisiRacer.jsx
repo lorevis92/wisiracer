@@ -339,7 +339,7 @@ function initGame(container, cfg, ui) {
   scene.fog = new THREE.FogExp2(TR.fog, TR.fogD);
   const camera = new THREE.PerspectiveCamera(78, W() / H(), 0.1, 6000);
 
-  scene.add(new THREE.AmbientLight(TR.amb, 0.6));
+  scene.add(new THREE.AmbientLight(TR.amb, TR.city ? 1.25 : 0.6));
   const sun = new THREE.DirectionalLight(TR.sun, 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
 
@@ -650,7 +650,11 @@ function initGame(container, cfg, ui) {
       finished: false, finishTime: 0, respawnT: 0,
     };
     const p = curve.getPointAt(t0);
-    r.mesh.position.copy(p);
+    const tangent = curve.getTangentAt(t0);
+    const side = new THREE.Vector3().crossVectors(tangent, UP).normalize();
+    r.mesh.position.copy(p).addScaledVector(side, r.lat);
+    r.mesh.position.y += r.voff;
+    if (!r.mesh.userData.sprite) r.mesh.lookAt(r.mesh.position.clone().add(tangent));
     scene.add(r.mesh);
     racers.push(r);
   });
