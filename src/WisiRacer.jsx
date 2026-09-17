@@ -628,6 +628,8 @@ function initGame(container, cfg, ui) {
     const p0 = curve.getPointAt(startT), tan = curve.getTangentAt(startT);
     player.mesh.position.copy(p0);
     player.yaw = Math.atan2(-tan.x, -tan.z);
+    player.mesh.position.y += 5;
+    if (!player.mesh.userData.sprite) player.mesh.lookAt(player.mesh.position.clone().add(tan));
   }
   scene.add(player.mesh);
   if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1);
@@ -881,7 +883,7 @@ function initGame(container, cfg, ui) {
           player.mesh.position.z + fwdV.z * 14
         );
         player.mesh.lookAt(tmpV);
-        player.mesh.children[0].rotation.z = -player.yawVel * 0.4 + player.impactRoll;
+        player.mesh.children[0].rotation.z = player.yawVel * 0.4 + player.impactRoll;
       }
 
       if (distC > 95 && phase === "race") {
@@ -1211,7 +1213,8 @@ function initGame(container, cfg, ui) {
     currentCamDist += (camDistTarget - currentCamDist) * Math.min(1, dt * 3);
     tmpV.copy(getPos(player)).addScaledVector(fwdV, currentCamDist);
     tmpV.y += 3.6;
-    camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
+    if (phase === "count") camera.position.copy(tmpV);
+    else camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
       camera.position.y += (Math.random() - 0.5) * shake * 1.6;
@@ -1221,7 +1224,8 @@ function initGame(container, cfg, ui) {
     camera.lookAt(tmpV);
 
     // FOV dinamico: a tutta velocità il campo visivo si allarga (sensazione di velocità)
-    const fovT = THREE.MathUtils.clamp(66 + player.speed * 0.045, 66, 76);
+    const fovT = THREE.MathUtils.clamp(66 + Math.max(130, player.speed) * 0.045, 66, 76);
+    if (phase === "count") { camera.fov = fovT; camera.updateProjectionMatrix(); }
     if (Math.abs(camera.fov - fovT) > 0.05) {
       camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6);
       camera.updateProjectionMatrix();
@@ -1408,6 +1412,22 @@ const CSS = `
 .wr-table{border-collapse:collapse;width:min(620px,92vw);background:rgba(8,16,32,.85);border:1px solid #1d3a5c;border-radius:12px;overflow:hidden;}
 .wr-table th{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.2em;color:#5d93c4;padding:10px 12px;border-bottom:1px solid #1d3a5c;text-align:left;}
 .wr-table td{padding:9px 12px;border-bottom:1px solid #10233c;font-size:15px;}
+.wr-mobile-stats{position:absolute;top:8px;left:12px;right:12px;pointer-events:none;text-shadow:0 1px 4px #000;}
+.wr-mobile-line{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#eaf6ff;}
+.wr-mobile-line small{font-size:9px;}
+.wr-mobile-meters{display:flex;gap:12px;width:min(360px,65%);margin-top:5px;}
+.wr-mobile-meters label{flex:1;min-width:0;font-size:8px;letter-spacing:.08em;color:#c3d8e8;}
+.wr-mobile-meters .wr-bar{height:4px;margin-top:2px;border:0;}
+.wr-mobile .wr-touch{bottom:max(8px,env(safe-area-inset-bottom));padding:0 12px;}
+.wr-mobile .wr-tbtn{width:48px;height:48px;font-size:10px;background:#10243bb3;}
+.wr-mobile .wr-tbtn.big{width:58px;height:58px;font-size:11px;}
+.wr-mobile .wr-tbtn.wr-fire{width:62px;height:62px;font-size:10px;background:#963312d9;box-shadow:none;}
+.wr-mobile .wr-fire span:first-child{font-size:22px;}
+.wr-mobile .wr-recenter{position:fixed;top:70px;left:12px;padding:5px 8px;min-height:32px;font-size:10px;background:#10223d66;}
+.wr-mobile .wr-mir svg{width:24px;height:24px;opacity:.6;}
+.wr-mobile .wr-count{inset:65px 0 auto;font-size:44px;}
+.wr-mobile .wr-msg{top:58px;font-size:13px;}
+.wr-mobile .wr-steer{width:150px;height:42px;font-size:10px;}
 .wr-table tr.me{background:rgba(79,195,247,.12);}
 .wr-hint{font-size:13px;color:#6fa3cf;max-width:640px;text-align:center;line-height:1.5;}
 .wr-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;}
@@ -1943,7 +1963,7 @@ export default function WisiRacer() {
       {screen === "race" && (
         <div style={{ position: "absolute", inset: 0 }}>
           <div ref={mountRef} style={{ position: "absolute", inset: 0 }} />
-          <div className="wr-hud">
+          <div className={"wr-hud" + (isTouch ? " wr-mobile" : "")}>
             {/* Hit flash overlay */}
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,0,0,0.45)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.22s", pointerEvents: "none" }} />
             {/* Vignetta motion blur — intensità con la velocità */}
@@ -1962,11 +1982,6 @@ export default function WisiRacer() {
                 </svg>
               </div>
             </div>
-            {hud && hud.count > 0 && gyroActive && (
-              <div style={{position:'absolute',top:'calc(50% - 80px)',left:0,right:0,textAlign:'center',fontSize:18,color:'#9fd6ff',fontFamily:'Rajdhani,sans-serif',fontWeight:600,textShadow:'0 1px 8px rgba(0,0,0,0.9)',zIndex:10,pointerEvents:'none'}}>
-                📱 Inclina il telefono per sterzare
-              </div>
-            )}
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
             {hitMsg && <div className="wr-msg" style={{ color: "#ff6644", textShadow: "0 0 18px rgba(255,80,0,.9)", top: "10%", bottom: "auto" }}>{hitMsg}</div>}
@@ -1976,7 +1991,7 @@ export default function WisiRacer() {
               </div>
             )}
 
-            {hud && (
+            {hud && !isTouch && (
               <>
                 <div style={{ position: "absolute", top: 14, left: 14, display: "flex", gap: 10 }}>
                   {hud.racemode ? (
@@ -2022,10 +2037,23 @@ export default function WisiRacer() {
               </>
             )}
 
+            {hud && isTouch && <div className="wr-mobile-stats">
+              <div className="wr-mobile-line">
+                <span>{hud.racemode ? `${hud.pos}/${hud.total} · GIRO ${hud.lap}/${hud.laps}` : `IN VOLO ${hud.alive} · KO ${hud.kills}${hud.timed ? ` · ${hud.timer}s` : ""}`}</span>
+                <span>{hud.speed} <small>VEL</small></span>
+              </div>
+              <div className="wr-mobile-meters">
+                <label>SCUDI<Bar v={hud.shields} max={60} color="#39d2ff" /></label>
+                <label>SCAFO<Bar v={hud.hull} max={100} color="#69f06e" danger /></label>
+                <label>BOOST<Bar v={hud.boost} max={100} color="#ffd23d" /></label>
+                <label style={{color:hud.hot ? '#ff785c' : undefined}}>{hud.hot ? 'CALORE!' : 'ARMA'}<Bar v={hud.heat} max={100} color="#ff785c" /></label>
+              </div>
+            </div>}
             {isTouch && (
               <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
-                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}}>RICENTRA STERZO</button>}
+                  <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
+                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
                   {!gyroActive && <div className="wr-steer" role="slider" aria-label="Sterzo" aria-valuemin={-1} aria-valuemax={1}
                     onPointerDown={e=>{if(steeringPointer.current!==null)return;e.preventDefault();steeringPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);steerAt(e);}}
                     onPointerMove={e=>{if(e.pointerId===steeringPointer.current)steerAt(e);}}
@@ -2034,7 +2062,6 @@ export default function WisiRacer() {
                   </div>}
                 </div>
                 <div style={{display:'flex',gap:10,pointerEvents:'auto',alignItems:'end'}}>
-                  <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
                   <button className="wr-tbtn" {...touch("brake")} aria-label="Freno">FRENO</button>
                   <button className="wr-tbtn big" {...touch("boost")} aria-label="Boost">BOOST</button>
                 </div>
