@@ -1,0 +1,153 @@
+import * as THREE from 'three';
+
+export const CANAIR = {
+  label: 'Canair Afterdark',
+  desc: 'Stollin Rones · boulevard dorati, Red Fox e galleria sopraelevata.',
+  city: true, halfWidth: 56, bg: 0x0c1327, fog: 0x20263b,
+  fogD: 0.00075, amb: 0xa8bed8, sun: 0xffd2a3,
+  nebula: false, planet: false, rockColor: 0x555555, rocks: 0,
+  pts: [[0,0,0],[0,0,-220],[100,0,-390],[330,2,-410],
+    [480,8,-250],[440,22,-30],[570,32,150],[430,32,330],
+    [190,18,360],[80,2,230],[-140,0,210],[-210,0,70]],
+};
+
+// Scene-native assets: no external images, video billboards, or runtime downloads.
+export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
+  const HW = track.halfWidth;
+  const group = new THREE.Group(); group.name = 'Canair Afterdark'; scene.add(group);
+  const stone = new THREE.MeshStandardMaterial({color:0x303747, roughness:0.86});
+  const road = new THREE.MeshStandardMaterial({color:0x293340, roughness:0.5, metalness:0.25, side:THREE.DoubleSide});
+  const gold = new THREE.MeshBasicMaterial({color:0xffce85});
+  const cyan = new THREE.MeshBasicMaterial({color:0x65d9dd});
+  const pink = new THREE.MeshBasicMaterial({color:0xf66b83});
+  const cube = new THREE.BoxGeometry(1,1,1);
+  const dummy = new THREE.Object3D();
+  let seed = 92;
+  function rand() { seed = (Math.imul(seed,1664525)+1013904223)>>>0; return seed/4294967296; }
+  function frame(t) {
+    const p=curve.getPointAt((t+1)%1), tangent=curve.getTangentAt((t+1)%1);
+    const side=new THREE.Vector3().crossVectors(tangent,new THREE.Vector3(0,1,0)).normalize();
+    return {p,tangent,side,yaw:Math.atan2(tangent.x,tangent.z)};
+  }
+  function box(pos, scale, material, yaw=0) {
+    const mesh=new THREE.Mesh(cube,material); mesh.position.copy(pos); mesh.scale.set(...scale); mesh.rotation.y=yaw; group.add(mesh); return mesh;
+  }
+  function ribbon(offset,width,height,mat) {
+    const positions=[],indices=[];
+    for(let i=0;i<=800;i++) {
+      const {p,side}=frame(i/800);
+      for(const edge of [-0.5,0.5]) {
+        const v=p.clone().addScaledVector(side,offset+edge*width); positions.push(v.x,v.y+height,v.z);
+      }
+      if(i<800) { const n=i*2; indices.push(n,n+2,n+1,n+1,n+2,n+3); }
+    }
+    const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geo.setIndex(indices); geo.computeVertexNormals(); group.add(new THREE.Mesh(geo,mat));
+  }
+  ribbon(0,HW*2,-7,road);
+  for(const sign of [-1,1]) {
+    ribbon(sign*(HW+5),10,-6.8,stone);
+    ribbon(sign*(HW-4),0.65,-6.85,sign===1?cyan:gold);
+    const wallVertices=[],wallIndices=[];
+    for(let i=0;i<=800;i++) {
+      const {p,side}=frame(i/800);p.addScaledVector(side,sign*HW);
+      wallVertices.push(p.x,p.y-7,p.z,p.x,p.y+7,p.z);
+      if(i<800){const n=i*2;wallIndices.push(n,n+1,n+2,n+1,n+3,n+2);}
+    }
+    const wallGeo=new THREE.BufferGeometry();wallGeo.setAttribute('position',new THREE.Float32BufferAttribute(wallVertices,3));
+    wallGeo.setIndex(wallIndices);wallGeo.computeVertexNormals();
+    const wallMat=stone.clone();wallMat.side=THREE.DoubleSide;
+    group.add(new THREE.Mesh(wallGeo,wallMat));
+    const points=Array.from({length:401},(_,i)=>{const {p,side}=frame(i/400);return p.clone().addScaledVector(side,sign*HW).add(new THREE.Vector3(0,7,0));});
+    const railCurve=new THREE.CatmullRomCurve3(points.slice(0,-1),true);
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(railCurve,800,1.1,5,true),stone));
+    const lightPoints=points.slice(0,-1).map(p=>p.clone().add(new THREE.Vector3(0,1.1,0)));
+    group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lightPoints,true),800,0.22,4,true),sign===1?cyan:gold));
+  }
+  const ground=box(new THREE.Vector3(180,-34,0),[2400,8,2100],new THREE.MeshStandardMaterial({color:0x101b22,roughness:0.95}));
+  ground.name='City foundations';
+
+  if (track.practice) {
+    // A quiet test track isolates steering and camera feel from scenery.
+    for(let i=0;i<80;i++){const {p,yaw}=frame(i/80);p.y-=6.8;box(p,[0.5,0.08,9],gold,yaw);}
+    const {p,yaw}=frame(startT);p.y-=6.7;box(p,[HW*2,0.1,2],cyan,yaw);
+    return group;
+  }
+
+  // Instanced facades/windows keep draw calls low on mobile.
+  const buildings=[], windows=[], lamps=[], plants=[];
+  const pathSamples=curve.getSpacedPoints(240);
+  for(let i=0;i<116;i++) for(const sign of [-1,1]) {
+    const {p,side,yaw}=frame(i/116);
+    const depth=22+rand()*13, width=15+rand()*9, height=22+rand()*78;
+    const center=p.clone().addScaledVector(side,sign*(HW+31+rand()*8));
+    // No facades protruding into an adjacent stretch of road.
+    if(pathSamples.some(q=>Math.hypot(q.x-center.x,q.z-center.z)<HW+17)) continue;
+    buildings.push({p:new THREE.Vector3(center.x,p.y-7+height/2,center.z),s:[depth,height,width],yaw});
+    const face=center.clone().addScaledVector(side,-sign*(depth/2+0.1));
+    for(let row=0;row<Math.floor(height/7);row++) for(let col=-1;col<=1;col++) {
+      if(rand()<0.25)continue;
+      const v=face.clone().addScaledVector(new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)),col*5);
+      v.y=p.y-3+row*7; windows.push({p:v,s:[0.3,2.2,2.3],yaw});
+    }
+  }
+  for(let i=0;i<90;i++) {
+    const {p,side,yaw}=frame(i/90);
+    for(const sign of [-1,1]) {
+      const v=p.clone().addScaledVector(side,sign*(HW+6)); v.y+=4;
+      lamps.push({p:v,s:[0.5,22,0.5],yaw});
+      const crown=v.clone(); crown.y+=10; plants.push({p:crown,s:[3.6,0.7,3.6],yaw});
+    }
+    const dash=p.clone();dash.y-=6.8;box(dash,[0.4,0.08,7],gold,yaw);
+  }
+  function instances(items,mat,name) {
+    const mesh=new THREE.InstancedMesh(cube,mat,items.length); mesh.name=name;
+    items.forEach((x,i)=>{dummy.position.copy(x.p);dummy.rotation.set(0,x.yaw,0);dummy.scale.set(...x.s);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});
+    mesh.computeBoundingSphere();group.add(mesh);
+  }
+  instances(buildings,stone,'Canair facades');instances(windows,gold,'Warm windows');
+  instances(lamps,stone,'Streetlights');instances(plants,gold,'Lanterns');
+
+  function sign(t,offset,title,subtitle,color,width=35) {
+    const {p,side,tangent}=frame(t);
+    const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=384;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#101724';ctx.fillRect(0,0,1024,384);
+    ctx.strokeStyle=color;ctx.lineWidth=12;ctx.strokeRect(12,12,1000,360);
+    ctx.textAlign='center';ctx.fillStyle=color;ctx.font='bold 100px sans-serif';ctx.fillText(title,512,175);
+    ctx.fillStyle='#f4dbb5';ctx.font='30px sans-serif';ctx.fillText(subtitle,512,280);
+    if(title==='THE RED FOX') {
+      ctx.strokeStyle=color;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(145,205);ctx.bezierCurveTo(950,205,850,220,900,165);ctx.stroke();
+    }
+    const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,width*0.375),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
+    mesh.position.copy(p).addScaledVector(side,offset);mesh.position.y+=17;
+    mesh.lookAt(mesh.position.clone().add(offset===0?tangent:side.clone().multiplyScalar(-Math.sign(offset))));group.add(mesh);
+  }
+  sign(0.20,-(HW+9),'THE RED FOX','LIVE MUSIC · CANAIR','#ff6378',43);
+  sign(0.36,HW+11,'LUBE TONE','STOLLIN RONES · AFTER DARK','#ffcf83');
+  sign(startT,0,'CANAIR','WISIVERSE GRAND PRIX','#70e2da',52);
+  // An open-sided gallery: roofs are above the chase camera and racing envelope.
+  for(let i=0;i<18;i++) {
+    const {p,side,yaw}=frame(0.52+i*0.003);
+    box(p.clone().add(new THREE.Vector3(0,30,0)),[HW*2+19,2,9],stone,yaw);
+    for(const sg of [-1,1])box(p.clone().addScaledVector(side,sg*(HW+7)).add(new THREE.Vector3(0,11,0)),[2,38,2],stone,yaw);
+    box(p.clone().add(new THREE.Vector3(0,28.8,0)),[HW*2-3,0.25,0.5],i%2?pink:cyan,yaw);
+  }
+  // Green terraces: the planet is lush, even in the city.
+  const foliage=new THREE.MeshStandardMaterial({color:0x235e50,roughness:1});
+  const plantGeo=new THREE.IcosahedronGeometry(1,1);
+  for(let i=0;i<52;i++) {
+    const {p,side}=frame(i/52);const tree=new THREE.Mesh(plantGeo,foliage);
+    tree.position.copy(p).addScaledVector(side,(i%2?1:-1)*(HW+11));tree.position.y+=2;
+    tree.scale.set(3,6,3);group.add(tree);
+  }
+  return group;
+}
+
+export const PRACTICE = {
+  ...CANAIR, label: 'Prova guida', practice: true, halfWidth: 64,
+  desc: 'Pista larga · curva veloce, tornante e esse. Nessun fuoco: prova sterzo, freno e boost.',
+  pts: [[0,0,0],[0,0,-220],[110,0,-380],[350,0,-380],
+    [520,0,-240],[520,0,-40],[420,0,100],[520,0,250],
+    [390,0,410],[120,0,410],[-160,0,290],[-180,0,90]],
+};
