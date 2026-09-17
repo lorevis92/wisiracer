@@ -146,7 +146,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
 
 export const PRACTICE = {
   ...CANAIR, label: 'Prova guida', practice: true, halfWidth: 64,
-  desc: 'Pista larga · curva veloce, tornante e esse. Nessun fuoco: prova sterzo, freno e boost.',
+  desc: 'Pista larga · curva veloce, tornante e esse. Prova sterzo, freno, boost e sparo.',
   pts: [[0,0,0],[0,0,-220],[110,0,-380],[350,0,-380],
     [520,0,-240],[520,0,-40],[420,0,100],[520,0,250],
     [390,0,410],[120,0,410],[-160,0,290],[-180,0,90]],

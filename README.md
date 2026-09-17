@@ -1,9 +1,9 @@
 # Revisione mobile — Samsung Galaxy S24 Ultra
 
-La selezione iniziale è **Prova guida**, un giro su un circuito largo e senza armi.
+La selezione iniziale è **Prova guida**, un giro su un circuito largo con sparo libero (gli avversari non sparano).
 Il dispositivo va tenuto in orizzontale. La simulazione si ferma in verticale e
 quando la pagina non è visibile. Sterzo progressivo a sinistra, freno e boost a
-destra; accelerazione automatica. Il giroscopio è opzionale, disattivato di default.
+destra; accelerazione automatica. Il giroscopio è attivo di default: mantieni il telefono in posizione di guida alla partenza; RICENTRA STERZO aggiorna la posizione neutra. Sterzo touch di riserva se i sensori non rispondono. Telecamera predefinita a distanza 10, altezza 3.6; pulsante SPARA da 88 px.
 
 Nel setup sono disponibili telecamera Molto vicina / Vicina / Media e grafica
 Leggera / Bilanciata / Dettagliata. Il profilo Bilanciata limita il pixel ratio a
@@ -13,7 +13,7 @@ Canair rimane selezionabile e passa da 68 a 112 unità di larghezza. Prova guida
 misura 128 unità. Le navicelle sono larghe circa 14 unità. Gli avversari rallentano
 in curva; la risposta dello sterzo è più dolce in velocità e più incisiva in frenata.
 
-Verifica eseguita: build e 11 test di collisioni/guida. Da verificare nel browser
+Verifica eseguita: build e 13 test di collisioni/guida. Da verificare nel browser
 sul dispositivo: inquadratura, multi-touch, equilibrio della gara e prestazioni.
 La grafica è ancora procedurale: il tratto realistico Red Fox è un lavoro successivo.
 

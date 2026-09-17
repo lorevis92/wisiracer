@@ -21,3 +21,18 @@ test('AI slows for tighter curves without exceeding cruise speed',()=>{
  assert.equal(cornerSpeed(0,140),140);
  assert.ok(cornerSpeed(0.03,140)<cornerSpeed(0.01,140));
 });
+
+import {phoneTilt, tiltSteering} from '../src/driving.js';
+test('phone steering reverses the sensor axis for opposite landscape orientations',()=>{
+ assert.equal(phoneTilt(20,5,90),20);
+ assert.equal(phoneTilt(-20,5,270),20);
+ assert.equal(phoneTilt(-20,5,-90),20);
+ assert.equal(phoneTilt(null,5,90),null);
+});
+test('tilt steering calibrates neutral, rejects jitter and handles angle wrap',()=>{
+ assert.equal(tiltSteering(12,12),0);
+ assert.equal(tiltSteering(14,12),0);
+ assert.equal(tiltSteering(38,12),1);
+ assert.equal(tiltSteering(-14,12),-1);
+ assert.equal(tiltSteering(-179,179),0);
+});

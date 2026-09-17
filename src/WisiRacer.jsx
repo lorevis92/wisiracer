@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
-import { steeringRate, approach, padSteering, cornerSpeed } from "./driving.js";
+import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, tiltSteering } from "./driving.js";
 import { resolveContact, resolveBarrier } from "./collisions.js";
 
 /* =====================================================================
@@ -658,7 +658,7 @@ function initGame(container, cfg, ui) {
   let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0, lastDebugT = -99;
   let lockedTarget = null;
   let paused = false, hudAcc = 0, animId = 0;
-  const chaseDistance = cfg.cameraDistance || 16;
+  const chaseDistance = cfg.cameraDistance || 10;
   let currentCamDist = -chaseDistance;
   const pairHitTimes = new Map();
   const elimOrder = [];
@@ -833,7 +833,7 @@ function initGame(container, cfg, ui) {
 
       // fuoco
       player.fireT -= dt;
-      if (!TR.practice && ctrl && keys.fire && player.fireT <= 0 && !player.hot) {
+      if (ctrl && keys.fire && player.fireT <= 0 && !player.hot) {
         player.fireT = 0.11; player.heat += 8; player.alt = !player.alt;
         rightV.crossVectors(fwdV, UP).normalize();
         const origin = getPos(player).clone().addScaledVector(fwdV, 3.5).addScaledVector(rightV, player.alt ? 2.3 : -2.3);
@@ -1210,7 +1210,7 @@ function initGame(container, cfg, ui) {
     const camDistTarget = -chaseDistance - (player.boosting ? 1.5 : 0);
     currentCamDist += (camDistTarget - currentCamDist) * Math.min(1, dt * 3);
     tmpV.copy(getPos(player)).addScaledVector(fwdV, currentCamDist);
-    tmpV.y += 5.2;
+    tmpV.y += 3.6;
     camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
@@ -1400,6 +1400,10 @@ const CSS = `
 @media(orientation:portrait){.wr-rotate{display:flex;position:absolute;inset:0;z-index:100;background:#071323ee;align-items:center;justify-content:center;text-align:center;padding:30px;}}
 .wr-touch{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none;}
 .wr-tbtn{pointer-events:auto;width:62px;height:62px;border-radius:50%;border:1px solid #2f6da8;background:rgba(10,22,40,.6);color:#9fd6ff;font-size:22px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+.wr-tbtn.wr-fire{width:88px;height:88px;flex-direction:column;gap:2px;border:2px solid #ffd7a3;background:rgba(168,48,13,.94);color:#fff;font:bold 14px sans-serif;box-shadow:0 0 18px #ff712866;}
+.wr-fire span:first-child{font-size:30px;}
+.wr-tbtn:active{filter:brightness(1.5);transform:scale(.95);}
+.wr-recenter{padding:12px;border:1px solid #9fd6ff;border-radius:10px;background:#10223de6;color:#fff;font-size:11px;touch-action:manipulation;}
 .wr-tbtn.big{width:78px;height:78px;font-size:14px;font-family:'Orbitron',sans-serif;font-weight:800;}
 .wr-table{border-collapse:collapse;width:min(620px,92vw);background:rgba(8,16,32,.85);border:1px solid #1d3a5c;border-radius:12px;overflow:hidden;}
 .wr-table th{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.2em;color:#5d93c4;padding:10px 12px;border-bottom:1px solid #1d3a5c;text-align:left;}
@@ -1519,9 +1523,9 @@ export default function WisiRacer() {
   const [screen, setScreen] = useState("title");
   const [modeKey, setModeKey] = useState("grand_prix");
   const [trackKey, setTrackKey] = useState("practice");
-  const [cameraDistance, setCameraDistance] = useState(16);
+  const [cameraDistance, setCameraDistance] = useState(10);
   const [renderScale, setRenderScale] = useState(1.25);
-  const [useGyro, setUseGyro] = useState(false);
+  const [useGyro, setUseGyro] = useState(true);
   const steeringPointer = useRef(null);
   const [diffKey, setDiffKey] = useState("pilot");
   const [hud, setHud] = useState(null);
@@ -1683,33 +1687,33 @@ export default function WisiRacer() {
       gyro.calibDone = false;
       gyro.calibStart = null;
 
+      let lastAngle = null;
+      let received = false;
       const onOrientation = (e) => {
-        if (e.beta === null) return;
-        const now = performance.now() / 1000;
-        if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
-        gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
-        if (!gyro.calibDone) {
-          if (gyro.calibStart === null) gyro.calibStart = now;
-          gyro.calibSamples.push(gyro.filteredBeta);
-          if (now - gyro.calibStart >= 2) {
-            gyro.betaRef = gyro.calibSamples.reduce((a, b) => a + b, 0) / gyro.calibSamples.length;
-            gyro.calibDone = true;
-          }
+        const angle = window.screen.orientation?.angle ?? window.orientation ?? 90;
+        const value = phoneTilt(e.beta, e.gamma, angle);
+        if (value === null || window.innerHeight > window.innerWidth) return;
+        if (!received) {
+          received = true;
+          keysRef.current.gyroActive = true;
+          setGyroActive(true);
         }
-        const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
-        const DEAD = 4, MAX = 26;
-        let steer = 0;
-        if (Math.abs(tilt) > DEAD) {
-          steer = Math.max(-1, Math.min(1, (Math.abs(tilt) - DEAD) / (MAX - DEAD))) * Math.sign(tilt);
+        if (lastAngle !== angle) { gyro.betaRef = null; lastAngle = angle; }
+        if (gyro.betaRef === null) {
+          gyro.betaRef = value;
+          gyro.filteredBeta = 0;
         }
-        keysRef.current.gyroSteer = steer;
+        const target = tiltSteering(value, gyro.betaRef);
+        gyro.filteredBeta += (target - gyro.filteredBeta) * 0.25;
+        keysRef.current.gyroSteer = gyro.filteredBeta;
       };
-
       window.addEventListener("deviceorientation", onOrientation);
-      keysRef.current.gyroActive = true;
-      setGyroActive(true);
+      const sensorTimeout = window.setTimeout(() => {
+        if (!received) setMsg("Movimento non rilevato: usa lo sterzo touch o abilita i sensori nel browser.");
+      }, 3500);
 
       gyroCleanup = () => {
+        window.clearTimeout(sensorTimeout);
         window.removeEventListener("deviceorientation", onOrientation);
         keysRef.current.gyroActive = false;
         keysRef.current.gyroSteer = 0;
@@ -1903,11 +1907,11 @@ export default function WisiRacer() {
 
           <div className="wr-label wr-disp">Guida e visuale</div>
           <div className="wr-row" style={{flexWrap:'wrap',justifyContent:'center',gap:16}}>
-            <label>Telecamera <select value={cameraDistance} onChange={e=>setCameraDistance(Number(e.target.value))}><option value={13}>Molto vicina</option><option value={16}>Vicina</option><option value={20}>Media</option></select></label>
+            <label>Telecamera <select value={cameraDistance} onChange={e=>setCameraDistance(Number(e.target.value))}><option value={8}>Molto vicina</option><option value={10}>Vicina</option><option value={13}>Media</option></select></label>
             <label>Grafica <select value={renderScale} onChange={e=>setRenderScale(Number(e.target.value))}><option value={1}>Leggera</option><option value={1.25}>Bilanciata</option><option value={1.75}>Dettagliata</option></select></label>
             {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Sterza inclinando il telefono</label>}
           </div>
-          <p className="wr-hint">Accelerazione automatica · frena prima della curva · boost in uscita. Prova guida: un giro senza armi.</p>
+          <p className="wr-hint">Accelerazione automatica · frena prima della curva · boost in uscita. Prova guida: un giro con sparo libero e avversari che non sparano.</p>
           <div className="wr-label wr-disp">Difficoltà</div>
           <div className="wr-row">
             {Object.entries(DIFFS).map(([k, d]) => (
@@ -1960,7 +1964,7 @@ export default function WisiRacer() {
             </div>
             {hud && hud.count > 0 && gyroActive && (
               <div style={{position:'absolute',top:'calc(50% - 80px)',left:0,right:0,textAlign:'center',fontSize:18,color:'#9fd6ff',fontFamily:'Rajdhani,sans-serif',fontWeight:600,textShadow:'0 1px 8px rgba(0,0,0,0.9)',zIndex:10,pointerEvents:'none'}}>
-                📱 Tieni il telefono in posizione di guida
+                📱 Inclina il telefono per sterzare
               </div>
             )}
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
@@ -2021,6 +2025,7 @@ export default function WisiRacer() {
             {isTouch && (
               <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
+                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}}>RICENTRA STERZO</button>}
                   {!gyroActive && <div className="wr-steer" role="slider" aria-label="Sterzo" aria-valuemin={-1} aria-valuemax={1}
                     onPointerDown={e=>{if(steeringPointer.current!==null)return;e.preventDefault();steeringPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);steerAt(e);}}
                     onPointerMove={e=>{if(e.pointerId===steeringPointer.current)steerAt(e);}}
@@ -2029,7 +2034,7 @@ export default function WisiRacer() {
                   </div>}
                 </div>
                 <div style={{display:'flex',gap:10,pointerEvents:'auto',alignItems:'end'}}>
-                  {!TRACKS[trackKey].practice && <button className="wr-tbtn" {...touch("fire")} aria-label="Fuoco">FUOCO</button>}
+                  <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
                   <button className="wr-tbtn" {...touch("brake")} aria-label="Freno">FRENO</button>
                   <button className="wr-tbtn big" {...touch("boost")} aria-label="Boost">BOOST</button>
                 </div>
