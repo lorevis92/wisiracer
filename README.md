@@ -138,3 +138,16 @@ della pista aumentato per mantenere la precisione. Edifici ordinari più numeros
 in istanze condivise e dimensioni dei fabbricati conservate. La mappa di studio
 Higgsfield resta alla scala precedente: questa è una variazione da collaudare
 nel gioco prima di consolidarla nel progetto artistico. Build e 16 test passano.
+
+### Canair materials pass — 18 September 2026
+Bundled 512px WebP albedo textures generated with Higgsfield GPT Image 2.5:
+asphalt `03298365-4d8c-448c-bde2-9ea5de16eb3c`, limestone facade
+`48cd1fdc-8680-403b-9754-7fcde7e7b953`, stone
+`d5e10b28-1d56-4807-9ea0-aeeb0c8191e0`.
+Road UVs maintain a six-unit material repeat along the entire track. Instanced
+street frontage adds modeled cornices, roof caps, shop glazing and lamps.
+Red Fox gains a road-facing frontage extending toward the existing plot.
+Daylight uses hemisphere fill and filmic tone mapping; daylight stars are removed.
+This is the first environment art pass, not a completed photoreal city. No baked
+shadows or normal maps yet. Phone frame rate still requires a physical device test.
+Track dimensions, driving controls and camera are unchanged.

@@ -341,12 +341,13 @@ function initGame(container, cfg, ui) {
   scene.fog = new THREE.FogExp2(TR.fog, TR.fogD);
   const camera = new THREE.PerspectiveCamera(78, W() / H(), 0.1, 6000);
 
-  scene.add(new THREE.AmbientLight(TR.amb, TR.city ? 1.25 : 0.6));
-  const sun = new THREE.DirectionalLight(TR.sun, 1.1);
+  scene.add(new THREE.AmbientLight(TR.amb, TR.masterplan ? .65 : TR.city ? 1.25 : 0.6));
+  if(TR.masterplan){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;scene.add(new THREE.HemisphereLight(0xc8e5ff,0x615343,1.25));}
+  const sun = new THREE.DirectionalLight(TR.sun, TR.masterplan ? 2.4 : 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
 
   /* ------ stelle (con star-warp dinamico) ------ */
-  const STAR_N = 1600;
+  const STAR_N = TR.masterplan ? 0 : 1600;
   const starPos = new Float32Array(STAR_N * 3);
   for (let i = 0; i < STAR_N; i++) {
     const r = 1600 + Math.random() * 1800, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
@@ -1367,7 +1368,7 @@ function initGame(container, cfg, ui) {
     audio.dispose();
     scene.traverse(o => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) { if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material.dispose(); }
+      if (o.material) { const mats=Array.isArray(o.material)?o.material:[o.material]; mats.forEach(m=>{for(const key of ["map","normalMap","roughnessMap","bumpMap","emissiveMap"])m[key]?.dispose();m.dispose();}); }
     });
     renderer.dispose();
     if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {cityMaterials,buildCityArt} from './cityArt.js';
 import {buildMasterplan} from './masterplan.js';
 
 export const CANAIR = {
@@ -12,13 +13,14 @@ export const CANAIR = {
     [380,18,520],[150,2,600],[0,0,440],[0,0,220]],
 };
 
-// Scene-native assets: no external images, video billboards, or runtime downloads.
+// Geometry and bundled Higgsfield materials.
 export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   const HW = track.halfWidth;
+  const art=track.masterplan ? cityMaterials() : null;
   const widthAt=t=>track.widthAt ? track.widthAt(t) : HW;
   const group = new THREE.Group(); group.name = 'Canair Afterdark'; scene.add(group);
   const stone = new THREE.MeshStandardMaterial({color:0x303747, roughness:0.86});
-  const road = new THREE.MeshStandardMaterial({color:0x697988, emissive:0x263442, emissiveIntensity:0.35, roughness:0.9, metalness:0.02, side:THREE.DoubleSide});
+  const road = art?.asphalt || new THREE.MeshStandardMaterial({color:0x697988, emissive:0x263442, emissiveIntensity:0.35, roughness:0.9, metalness:0.02, side:THREE.DoubleSide});
   const gold = new THREE.MeshBasicMaterial({color:0xffce85});
   const cyan = new THREE.MeshBasicMaterial({color:0x65d9dd});
   const pink = new THREE.MeshBasicMaterial({color:0xf66b83});
@@ -35,16 +37,16 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
     const mesh=new THREE.Mesh(cube,material); mesh.position.copy(pos); mesh.scale.set(...scale); mesh.rotation.y=yaw; group.add(mesh); return mesh;
   }
   function ribbon(offset,width,height,mat) {
-    const positions=[],indices=[];
+    const positions=[],indices=[],uv=[];
     for(let i=0;i<=800;i++) {
       const {p,side}=frame(i/800);
       for(const edge of [-0.5,0.5]) {
-        const v=p.clone().addScaledVector(side,(typeof offset === "function" ? offset(i/800) : offset)+edge*(typeof width === "function" ? width(i/800) : width)); positions.push(v.x,v.y+height,v.z);
+        const v=p.clone().addScaledVector(side,(typeof offset === "function" ? offset(i/800) : offset)+edge*(typeof width === "function" ? width(i/800) : width)); positions.push(v.x,v.y+height,v.z); uv.push((edge+.5)*(typeof width === "function" ? width(i/800) : width)/6,i/800*curve.getLength()/6);
       }
       if(i<800) { const n=i*2; indices.push(n,n+2,n+1,n+1,n+2,n+3); }
     }
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-    geo.setIndex(indices); geo.computeVertexNormals(); group.add(new THREE.Mesh(geo,mat));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices); geo.computeVertexNormals(); group.add(new THREE.Mesh(geo,mat));
   }
   ribbon(0,t=>widthAt(t)*2,-7,road);
   for(const sign of [-1,1]) {
@@ -70,7 +72,8 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   ground.name='City foundations';
 
   if (track.masterplan) {
-    buildMasterplan(scene,curve);
+    buildMasterplan(scene,curve,art);
+    buildCityArt(scene,curve,widthAt,art);
     const {p,yaw}=frame(startT);p.y-=6.7;box(p,[HW*2,0.1,3],cyan,yaw);
     return group;
   }

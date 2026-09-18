@@ -12,10 +12,10 @@ export function cityRoute(){
  const i=p.findIndex((a,k)=>{const b=p[(k+1)%p.length];return Math.abs(a[1]+650)<.01&&Math.abs(b[1]+650)<.01&&a[0]<-200&&b[0]>-200;});
  return [[-200,0,650],...p.slice(i+1).concat(p.slice(0,i+1)).map(([x,y])=>[x,0,-y])].map(([x,y,z])=>[x*CITY_SCALE,y,z*CITY_SCALE]);
 }
-export const MASTERPLAN={label:'Canair · Prova città',desc:'Nuova città · percorso esteso ×4 · viali ampi · Utgenra e luoghi dei capitoli. Volumi provvisori.',city:true,masterplan:true,practice:true,halfWidth:80,widthAt:cityHalfWidth,bg:0x718ca0,fog:0x9aafbc,fogD:0.00022,amb:0xe4efff,sun:0xfff1d9,nebula:false,planet:false,rocks:0,pts:cityRoute()};
+export const MASTERPLAN={label:'Canair · Prova città',desc:'Nuova città · percorso esteso ×4 · viali ampi · Utgenra e luoghi dei capitoli. Materiali Higgsfield e nuovi fronti stradali.',city:true,masterplan:true,practice:true,halfWidth:80,widthAt:cityHalfWidth,bg:0x718ca0,fog:0x9aafbc,fogD:0.00022,amb:0xe4efff,sun:0xfff1d9,nebula:false,planet:false,rocks:0,pts:cityRoute()};
 export function utgenraHeight(x,y){const u=(x-1100)/750,v=(y-120)/920;if(u<=0||u>=1||v<=0||v>=1)return 0;if(x>=1180&&x<=1300&&y>=430&&y<=550)return 115;return 340*Math.sin(Math.PI*u)**.9*Math.sin(Math.PI*v)**.9*(1+.10*Math.sin(x*.023)*Math.sin(y*.018));}
 export const landmarks=[['THE RED FOX',-320,-550,24,70,55],['MAWHET ROSET',-740,-160,22,65,50],['LUBE TONE',440,160,25,80,60],['STRUMENTI',-270,-150,14,45,40],['CLUB',-170,-500,18,65,50],['ETICHETTA',620,450,45,80,60]];
-export function buildMasterplan(scene,curve){
+export function buildMasterplan(scene,curve,art){
  const g=new THREE.Group();g.name='Canair masterplan';scene.add(g);
  const grey=new THREE.MeshStandardMaterial({color:0x9db2bf,roughness:.9}),stone=new THREE.MeshStandardMaterial({color:0xc5b799,roughness:1}),rock=new THREE.MeshStandardMaterial({color:0x647560,roughness:1,side:THREE.DoubleSide}),red=new THREE.MeshStandardMaterial({color:0xb85440,roughness:.8}),road=new THREE.MeshStandardMaterial({color:0x4c606a});
  const cube=new THREE.BoxGeometry(1,1,1);
@@ -33,7 +33,7 @@ export function buildMasterplan(scene,curve){
   if(landmarks.some(p=>Math.abs(x-p[1])<110&&Math.abs(y-p[2])<100))continue;
   items.push([x,y,14+rand()*48,35+rand()*14,32+rand()*17]);
  }
- const inst=new THREE.InstancedMesh(cube,grey,items.length),dummy=new THREE.Object3D();items.forEach(([x,y,h,w,d],i)=>{dummy.position.set(x,h/2-7,-y);dummy.scale.set(w/CITY_SCALE,h,d/CITY_SCALE);dummy.updateMatrix();inst.setMatrixAt(i,dummy.matrix);});inst.computeBoundingSphere();g.add(inst);
+ const inst=new THREE.InstancedMesh(cube,art?.sides || grey,items.length),dummy=new THREE.Object3D();items.forEach(([x,y,h,w,d],i)=>{dummy.position.set(x,h/2-7,-y);dummy.scale.set(w/CITY_SCALE,h,d/CITY_SCALE);dummy.updateMatrix();inst.setMatrixAt(i,dummy.matrix);});inst.computeBoundingSphere();g.add(inst);
  function sign(text,x,y,h){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#132435';ctx.fillRect(0,0,512,96);ctx.fillStyle='#fff1cb';ctx.font='bold 42px sans-serif';ctx.textAlign='center';ctx.fillText(text,256,64);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const o=new THREE.Mesh(new THREE.PlaneGeometry(60/CITY_SCALE,11.25),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));o.position.set(x,h,-y);let near=samples.reduce((a,p)=>p.distanceToSquared(o.position)<a.distanceToSquared(o.position)?p:a,samples[0]);o.lookAt(near.x,h,near.z);g.add(o);}
  landmarks.forEach(([n,x,y,h,w,d])=>{box(n,x,y,0,w/CITY_SCALE,d/CITY_SCALE,h,red);sign(n,x,y,h+3);});
  const pos=[],ind=[],nx=61,ny=73;
