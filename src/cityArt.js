@@ -18,6 +18,8 @@ export function buildCityArt(scene,curve,widthAt,mat){
  const add=(material,p,size,yaw=0)=>{if(!batches.has(material))batches.set(material,[]);batches.get(material).push({p,size,yaw});};
  const samples=curve.getSpacedPoints(900),length=curve.getLength();
  let seed=741;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ // Three architectural palettes share the same Higgsfield texture memory.
+ const palettes=[0xe6e0d5,0xb7c5cf,0xc7a58e].map(color=>{const m=mat.facade.clone();m.color.setHex(color);return [m,m,mat.roof,mat.roof,m,m];});
  const n=Math.floor(length/95);
  for(let i=0;i<n;i++)for(const sign of [-1,1]){
   const t=i/n,p=curve.getPointAt(t),tan=curve.getTangentAt(t),side=new THREE.Vector3(tan.z,0,-tan.x).normalize(),yaw=Math.atan2(tan.x,tan.z);
@@ -25,8 +27,10 @@ export function buildCityArt(scene,curve,widthAt,mat){
   const center=p.clone().addScaledVector(side,sign*(widthAt(t)+30+depth/2));
   if(samples.some(q=>Math.hypot(q.x-center.x,q.z-center.z)<widthAt(t)+depth/2+6))continue;
   const place=(out,along,y)=>center.clone().addScaledVector(side,out).addScaledVector(tan,along).setY(y-7);
-  add(mat.sides,place(0,0,h/2),[depth,h,w],yaw);
+  add(palettes[Math.floor(i/12)%palettes.length],place(0,0,h/2),[depth,h,w],yaw);
   add(mat.roof,place(0,0,h+.7),[depth+2,1.4,w+2],yaw);
+  if(i%3===0)add(mat.stone,place(0,0,h+4),[depth*.65,6,w*.6],yaw);
+  if(i%4===0)for(const along of [-w*.35,w*.35])add(mat.stone,place(-sign*(depth/2+.8),along,h/2),[1.6,h,1.8],yaw);
   for(let level=9;level<h;level+=9)add(mat.stone,place(0,0,level),[depth+.9,.55,w+.9],yaw);
   add(mat.stone,place(0,0,2),[depth+1,4,w+1],yaw);
   for(let k=-1;k<=1;k++){

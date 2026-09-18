@@ -52,15 +52,17 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   for(const sign of [-1,1]) {
     ribbon(t=>sign*(widthAt(t)+5),10,-6.8,stone);
     ribbon(t=>sign*(widthAt(t)-4),2.4,-6.85,sign===1?cyan:gold);
-    const wallVertices=[],wallIndices=[];
+    const wallVertices=[],wallIndices=[],wallUV=[];
     for(let i=0;i<=800;i++) {
       const {p,side}=frame(i/800);p.addScaledVector(side,sign*widthAt(i/800));
       wallVertices.push(p.x,p.y-7,p.z,p.x,p.y+7,p.z);
+      wallUV.push(i/800*curve.getLength()/8,0,i/800*curve.getLength()/8,1.75);
       if(i<800){const n=i*2;wallIndices.push(n,n+1,n+2,n+1,n+3,n+2);}
     }
     const wallGeo=new THREE.BufferGeometry();wallGeo.setAttribute('position',new THREE.Float32BufferAttribute(wallVertices,3));
-    wallGeo.setIndex(wallIndices);wallGeo.computeVertexNormals();
+    wallGeo.setAttribute("uv",new THREE.Float32BufferAttribute(wallUV,2));wallGeo.setIndex(wallIndices);wallGeo.computeVertexNormals();
     const wallMat=new THREE.MeshStandardMaterial({color:0xd2b58b,emissive:0x6e4b21,emissiveIntensity:0.4,roughness:0.9,side:THREE.DoubleSide});
+    if(art){wallMat.map=art.stone.map;wallMat.color.setHex(0xd2c7af);wallMat.emissiveIntensity=.12;}
     group.add(new THREE.Mesh(wallGeo,wallMat));
     const points=Array.from({length:401},(_,i)=>{const {p,side}=frame(i/400);return p.clone().addScaledVector(side,sign*widthAt(i/400)).add(new THREE.Vector3(0,7,0));});
     const railCurve=new THREE.CatmullRomCurve3(points.slice(0,-1),true);

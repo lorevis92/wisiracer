@@ -24,9 +24,9 @@ test('AI slows for tighter curves without exceeding cruise speed',()=>{
 
 import {phoneTilt, tiltSteering} from '../src/driving.js';
 test('phone steering reverses the sensor axis for opposite landscape orientations',()=>{
- assert.equal(phoneTilt(20,5,90),20);
- assert.equal(phoneTilt(-20,5,270),20);
- assert.equal(phoneTilt(-20,5,-90),20);
+ assert.equal(phoneTilt(20,5,90),-20);
+ assert.equal(phoneTilt(-20,5,270),-20);
+ assert.equal(phoneTilt(-20,5,-90),-20);
  assert.equal(phoneTilt(null,5,90),null);
 });
 test('tilt steering calibrates neutral, rejects jitter and handles angle wrap',()=>{
@@ -35,4 +35,13 @@ test('tilt steering calibrates neutral, rejects jitter and handles angle wrap',(
  assert.equal(tiltSteering(38,12),1);
  assert.equal(tiltSteering(-14,12),-1);
  assert.equal(tiltSteering(-179,179),0);
+});
+
+test('landscape left tilt matches the left button through the driving pipeline',()=>{
+ for(const [angle,beta] of [[90,26],[270,-26],[-90,-26]]){
+  const input=tiltSteering(phoneTilt(beta,5,angle),phoneTilt(0,5,angle));
+  assert.equal(input,-1);
+  assert.equal(steeringRate(input,100,false),steeringRate(padSteering(0,0,200),100,false));
+  assert.equal(tiltSteering(phoneTilt(-beta,5,angle),0),1);
+ }
 });

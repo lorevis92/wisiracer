@@ -18,7 +18,7 @@ export function cornerSpeed(curvature, cruise) {
 export function phoneTilt(beta, gamma, angle) {
   if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return null;
   const a = ((angle % 360) + 360) % 360;
-  return a === 90 ? beta : a === 270 ? -beta : a === 180 ? -gamma : gamma;
+  return a === 90 ? -beta : a === 270 ? beta : a === 180 ? -gamma : gamma;
 }
 export function tiltSteering(value, neutral) {
   const delta = ((value - neutral + 540) % 360) - 180;
