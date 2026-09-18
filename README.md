@@ -114,3 +114,17 @@ Frecce / WASD: vira e cabra · SHIFT: boost · SPAZIO: laser · X: freno · ESC:
 - React + Three.js, nessun backend, nessun database.
 - I video intro/outro partono dopo il click su "VIA ALLA GARA" (gesto utente),
   quindi l'autoplay con audio è consentito dai browser. "SALTA" è sempre disponibile.
+
+## Canair · Prova città
+
+Nuovo circuito selezionabile e predefinito: traduzione in Three.js della pianta
+Higgsfield/Blender approvata, con geometrie native leggere (non caricamento del GLB).
+Un giro, sterzo/camera/velocità invariati; armi disponibili al giocatore.
+Anello circa 6,1 km, larghezza 70 unità e partenza sul rettilineo sud.
+Utgenra ha pendici fino a circa 352 m, belvedere a 115 m, sentiero e statue
+segnaposto. Quartieri e luoghi sono ancora volumi di studio.
+Le vie secondarie sono visibili ma chiuse dalle barriere durante la gara.
+Esplorazione libera, interni e collisioni pedonali non sono implementati.
+Il tempo sul giro non è ancora calibrato a 2–3 minuti: le velocità restano quelle
+approvate per non alterare la guida. Build e 15 test automatici verificati;
+resa visiva e prestazioni nel browser mobile richiedono una prova sul dispositivo.

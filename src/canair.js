@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildMasterplan} from './masterplan.js';
 
 export const CANAIR = {
   label: 'Canair Afterdark',
@@ -66,6 +67,12 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   }
   const ground=box(new THREE.Vector3(180,-34,0),[2400,8,2100],new THREE.MeshStandardMaterial({color:0x101b22,roughness:0.95}));
   ground.name='City foundations';
+
+  if (track.masterplan) {
+    buildMasterplan(scene,curve);
+    const {p,yaw}=frame(startT);p.y-=6.7;box(p,[HW*2,0.1,3],cyan,yaw);
+    return group;
+  }
 
   if (track.practice) {
     // A quiet test track isolates steering and camera feel from scenery.

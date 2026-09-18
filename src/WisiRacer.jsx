@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+import { MASTERPLAN } from "./masterplan.js";
 import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
 import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, tiltSteering } from "./driving.js";
 import { resolveContact, resolveBarrier } from "./collisions.js";
@@ -26,6 +27,7 @@ const MODES = {
 };
 
 const TRACKS = {
+  masterplan: MASTERPLAN,
   practice: PRACTICE,
   canair: CANAIR,
   nebula: {
@@ -59,7 +61,7 @@ const TRACKS = {
 };
 
 const TRACK_ICONS = {
-  practice: "🏁", canair: "🌃",
+  masterplan: "🏙️", practice: "🏁", canair: "🌃",
   nebula:'🌌', ringworld:'🪐', vortex_gate:'⚡', crimson_dust:'🔴',
   dark_matter:'⬛', ice_cathedral:'❄️', solar_forge:'☀️', ghost_nebula:'👻',
 };
@@ -404,7 +406,7 @@ function initGame(container, cfg, ui) {
 
   /* ------ tracciato ------ */
   const SAMPLES = 800;
-  const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, "catmullrom", 0.6);
+  const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, TR.masterplan ? "centripetal" : "catmullrom", 0.6);
   const cPts = curve.getSpacedPoints(SAMPLES);
 
   // Trova il tratto più rettilineo: minima variazione di direzione tra tangenti consecutive
@@ -1546,7 +1548,7 @@ function Bar({ v, max, color, danger }) {
 export default function WisiRacer() {
   const [screen, setScreen] = useState("title");
   const [modeKey, setModeKey] = useState("grand_prix");
-  const [trackKey, setTrackKey] = useState("practice");
+  const [trackKey, setTrackKey] = useState("masterplan");
   const [cameraDistance, setCameraDistance] = useState(10);
   const [renderScale, setRenderScale] = useState(1.25);
   const [useGyro, setUseGyro] = useState(true);
