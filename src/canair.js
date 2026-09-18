@@ -15,6 +15,7 @@ export const CANAIR = {
 // Scene-native assets: no external images, video billboards, or runtime downloads.
 export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   const HW = track.halfWidth;
+  const widthAt=t=>track.widthAt ? track.widthAt(t) : HW;
   const group = new THREE.Group(); group.name = 'Canair Afterdark'; scene.add(group);
   const stone = new THREE.MeshStandardMaterial({color:0x303747, roughness:0.86});
   const road = new THREE.MeshStandardMaterial({color:0x697988, emissive:0x263442, emissiveIntensity:0.35, roughness:0.9, metalness:0.02, side:THREE.DoubleSide});
@@ -38,20 +39,20 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
     for(let i=0;i<=800;i++) {
       const {p,side}=frame(i/800);
       for(const edge of [-0.5,0.5]) {
-        const v=p.clone().addScaledVector(side,offset+edge*width); positions.push(v.x,v.y+height,v.z);
+        const v=p.clone().addScaledVector(side,(typeof offset === "function" ? offset(i/800) : offset)+edge*(typeof width === "function" ? width(i/800) : width)); positions.push(v.x,v.y+height,v.z);
       }
       if(i<800) { const n=i*2; indices.push(n,n+2,n+1,n+1,n+2,n+3); }
     }
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
     geo.setIndex(indices); geo.computeVertexNormals(); group.add(new THREE.Mesh(geo,mat));
   }
-  ribbon(0,HW*2,-7,road);
+  ribbon(0,t=>widthAt(t)*2,-7,road);
   for(const sign of [-1,1]) {
-    ribbon(sign*(HW+5),10,-6.8,stone);
-    ribbon(sign*(HW-4),2.4,-6.85,sign===1?cyan:gold);
+    ribbon(t=>sign*(widthAt(t)+5),10,-6.8,stone);
+    ribbon(t=>sign*(widthAt(t)-4),2.4,-6.85,sign===1?cyan:gold);
     const wallVertices=[],wallIndices=[];
     for(let i=0;i<=800;i++) {
-      const {p,side}=frame(i/800);p.addScaledVector(side,sign*HW);
+      const {p,side}=frame(i/800);p.addScaledVector(side,sign*widthAt(i/800));
       wallVertices.push(p.x,p.y-7,p.z,p.x,p.y+7,p.z);
       if(i<800){const n=i*2;wallIndices.push(n,n+1,n+2,n+1,n+3,n+2);}
     }
@@ -59,7 +60,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
     wallGeo.setIndex(wallIndices);wallGeo.computeVertexNormals();
     const wallMat=new THREE.MeshStandardMaterial({color:0xd2b58b,emissive:0x6e4b21,emissiveIntensity:0.4,roughness:0.9,side:THREE.DoubleSide});
     group.add(new THREE.Mesh(wallGeo,wallMat));
-    const points=Array.from({length:401},(_,i)=>{const {p,side}=frame(i/400);return p.clone().addScaledVector(side,sign*HW).add(new THREE.Vector3(0,7,0));});
+    const points=Array.from({length:401},(_,i)=>{const {p,side}=frame(i/400);return p.clone().addScaledVector(side,sign*widthAt(i/400)).add(new THREE.Vector3(0,7,0));});
     const railCurve=new THREE.CatmullRomCurve3(points.slice(0,-1),true);
     group.add(new THREE.Mesh(new THREE.TubeGeometry(railCurve,800,1.1,5,true),stone));
     const lightPoints=points.slice(0,-1).map(p=>p.clone().add(new THREE.Vector3(0,1.1,0)));

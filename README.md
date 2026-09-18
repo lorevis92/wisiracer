@@ -128,3 +128,13 @@ Esplorazione libera, interni e collisioni pedonali non sono implementati.
 Il tempo sul giro non è ancora calibrato a 2–3 minuti: le velocità restano quelle
 approvate per non alterare la guida. Build e 15 test automatici verificati;
 resa visiva e prestazioni nel browser mobile richiedono una prova sul dispositivo.
+
+### Revisione durata e larghezza
+La prova città estende di 4 volte le distanze orizzontali della pianta, mantenendo
+velocità e comandi: anello circa 24,4 km nelle unità attuali, da cronometrare sul
+telefono. Circa l'86% è largo 160 unità; due tratti brevi scendono gradualmente a
+96. Strada, bordi e collisioni usano lo stesso profilo di larghezza. Campionamento
+della pista aumentato per mantenere la precisione. Edifici ordinari più numerosi
+in istanze condivise e dimensioni dei fabbricati conservate. La mappa di studio
+Higgsfield resta alla scala precedente: questa è una variazione da collaudare
+nel gioco prima di consolidarla nel progetto artistico. Build e 16 test passano.

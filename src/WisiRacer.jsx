@@ -405,7 +405,7 @@ function initGame(container, cfg, ui) {
   }
 
   /* ------ tracciato ------ */
-  const SAMPLES = 800;
+  const SAMPLES = TR.masterplan ? 3200 : 800;
   const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, TR.masterplan ? "centripetal" : "catmullrom", 0.6);
   const cPts = curve.getSpacedPoints(SAMPLES);
 
@@ -1076,7 +1076,7 @@ function initGame(container, cfg, ui) {
         const center=curve.getPointAt(t),tan=curve.getTangentAt(t);
         const side=new THREE.Vector3().crossVectors(tan,UP).normalize();
         const old={...bodies[i]};
-        const hit=resolveBarrier(bodies[i],center,side,TR.halfWidth-7);
+        const hit=resolveBarrier(bodies[i],center,side,(TR.widthAt ? TR.widthAt(t) : TR.halfWidth)-7);
         if(!hit)return;
         applyBody(r,bodies[i],old);
         if(r.isPlayer) {
