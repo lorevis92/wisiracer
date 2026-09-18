@@ -1071,7 +1071,7 @@ function initGame(container, cfg, ui) {
           if(hit.speed>35){damage(a,Math.min(9,hit.speed*0.05),b);damage(b,Math.min(9,hit.speed*0.05),a);}
         }
       }
-      if(TR.city)racers.forEach((r,i)=>{
+      if(TR.city && !TR.masterplan)racers.forEach((r,i)=>{
         if(!r.alive)return;
         const {t}=closestT(r.mesh.position,r.t);
         const center=curve.getPointAt(t),tan=curve.getTangentAt(t);

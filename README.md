@@ -151,3 +151,10 @@ Daylight uses hemisphere fill and filmic tone mapping; daylight stars are remove
 This is the first environment art pass, not a completed photoreal city. No baked
 shadows or normal maps yet. Phone frame rate still requires a physical device test.
 Track dimensions, driving controls and camera are unchanged.
+
+### Open streets foundation
+Canair masterplan no longer renders race walls/rails or applies their lateral
+collision. Existing other circuits retain barriers. Stone sidewalks, painted
+road edges, dashed center markings and benches replace the enclosed track look.
+This is an open-street prototype: building collision, pedestrian navigation and
+checkpoint enforcement for off-route shortcuts are not implemented yet.

@@ -37,6 +37,14 @@ export function buildCityArt(scene,curve,widthAt,mat){
    add(glass,place(-sign*(depth/2+.6),k*w*.27,6),[.5,7,w*.22],yaw);
    add(bronze,place(-sign*(depth/2+2),k*w*.27,10),[4,.7,w*.24],yaw);
   }
+  // Street furniture remains outside the carriageway.
+  if(i%3===0){
+   const bench=p.clone().addScaledVector(side,sign*(widthAt(t)+21)).addScaledVector(tan,22);
+   add(bronze,bench.clone().setY(-4.8),[2.2,.4,6],yaw);
+   add(bronze,bench.clone().addScaledVector(side,sign*.9).setY(-3.7),[.35,2.2,6],yaw);
+   for(const along of [-2,2])add(bronze,bench.clone().addScaledVector(tan,along).setY(-5.7),[1.6,1.8,.4],yaw);
+   add(mat.stone,p.clone().addScaledVector(side,sign*(widthAt(t)+21)).addScaledVector(tan,-22).setY(-5.3),[4,2.7,7],yaw);
+  }
   const lamp=p.clone().addScaledVector(side,sign*(widthAt(t)+14));
   add(bronze,lamp.clone().setY(6),[.7,26,.7],yaw);
   add(bronze,lamp.clone().addScaledVector(side,-sign*3).setY(19),[7,.5,.7],yaw);

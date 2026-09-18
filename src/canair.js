@@ -50,6 +50,11 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   }
   ribbon(0,t=>widthAt(t)*2,-7,road);
   for(const sign of [-1,1]) {
+    if(track.masterplan){
+      ribbon(t=>sign*(widthAt(t)+13),26,-6.65,art.stone);
+      ribbon(t=>sign*(widthAt(t)-1),.6,-6.85,new THREE.MeshBasicMaterial({color:0xe5dfce}));
+      continue;
+    }
     ribbon(t=>sign*(widthAt(t)+5),10,-6.8,stone);
     ribbon(t=>sign*(widthAt(t)-4),2.4,-6.85,sign===1?cyan:gold);
     const wallVertices=[],wallIndices=[],wallUV=[];
@@ -76,6 +81,12 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   if (track.masterplan) {
     buildMasterplan(scene,curve,art);
     buildCityArt(scene,curve,widthAt,art);
+    // Broken lane markings orient the driver without closing the street.
+    const paint=new THREE.MeshBasicMaterial({color:0xe9e1cc});
+    const count=Math.floor(curve.getLength()/45);
+    const marks=new THREE.InstancedMesh(cube,paint,count);
+    for(let i=0;i<count;i++){const {p,yaw}=frame(i/count);dummy.position.copy(p);dummy.position.y-=6.9;dummy.rotation.set(0,yaw,0);dummy.scale.set(.65,.05,12);dummy.updateMatrix();marks.setMatrixAt(i,dummy.matrix);}
+    marks.computeBoundingSphere();group.add(marks);
     const {p,yaw}=frame(startT);p.y-=6.7;box(p,[HW*2,0.1,3],cyan,yaw);
     return group;
   }
