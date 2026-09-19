@@ -158,3 +158,13 @@ collision. Existing other circuits retain barriers. Stone sidewalks, painted
 road edges, dashed center markings and benches replace the enclosed track look.
 This is an open-street prototype: building collision, pedestrian navigation and
 checkpoint enforcement for off-route shortcuts are not implemented yet.
+
+### Megalopolis structure — 19 September 2026
+The previous scattered low-rise population is replaced by 1,118 deterministic
+building plots, including 215 towers above 110 world units, two height clusters,
+setback upper floors, podiums and roof crowns. A 17-avenue / 22-cross-street grid
+joins the retained roads. Lots reserve the race corridor, landmarks and Utgenra.
+Street frontage skips grid intersections. Spatial instancing batches allow
+frustum culling; textures reuse existing Higgsfield assets. This is a structural
+city expansion, not individually authored photoreal buildings or a completed
+pedestrian simulation. Physical-device performance remains unmeasured.

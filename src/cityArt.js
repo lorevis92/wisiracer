@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {AVENUES,STREETS} from './metropolis.js';
 // Higgsfield albedo assets are bundled locally; no generation service at runtime.
 export function cityMaterials(){
  const load=name=>{const t=new THREE.TextureLoader().load(`/assets/canair/${name}.webp`);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;};
@@ -26,6 +27,8 @@ export function buildCityArt(scene,curve,widthAt,mat){
   const depth=32+rand()*16,w=50+rand()*27,h=28+Math.floor(rand()*6)*9;
   const center=p.clone().addScaledVector(side,sign*(widthAt(t)+30+depth/2));
   if(samples.some(q=>Math.hypot(q.x-center.x,q.z-center.z)<widthAt(t)+depth/2+6))continue;
+  const planX=center.x/4,planY=-center.z/4,margin=Math.hypot(depth,w)/8;
+  if([...AVENUES,-750,-400,0,400,750].some(x=>Math.abs(planX-x)<margin+12)||[...STREETS,-350,-50,250].some(y=>Math.abs(planY-y)<margin+21))continue;
   const place=(out,along,y)=>center.clone().addScaledVector(side,out).addScaledVector(tan,along).setY(y-7);
   add(palettes[Math.floor(i/12)%palettes.length],place(0,0,h/2),[depth,h,w],yaw);
   add(mat.roof,place(0,0,h+.7),[depth+2,1.4,w+2],yaw);
