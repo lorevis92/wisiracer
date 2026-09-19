@@ -259,3 +259,11 @@ The racing collision still covers the building: this is a furnished visible room
 not yet a walk-in venue with staff, orders or interactions. Upper floors have not
 been furnished in this pass. Build, existing 24 tests and finite instance bounds
 were checked; live GPU appearance and S24 Ultra frame time remain unverified.
+
+### Upper Red Fox windows
+Twelve fixed room arrangements replace identical flat window backings. Pleated
+curtain geometry uses three muted fabrics with asymmetric openings; two windows
+have partially lowered blinds. Separate sash frames, brass handles, projecting
+sills and selectively raised lower sashes add depth. Small room boxes contain
+lamps or shelving, with a few warm emissive interiors and no additional lights.
+Curtain surfaces merge into three meshes. Appearance still needs phone review.

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {buildRedFoxInterior} from './redFoxInterior.js';
+import {buildRedFoxWindows} from './redFoxWindows.js';
 export const RED_FOX={x:-1280,z:2470,width:28,depth:18,height:17};
 export function buildRedFox(scene,art){
  const group=new THREE.Group();group.name='Red Fox detailed building';group.position.set(RED_FOX.x,-7,RED_FOX.z);scene.add(group);
@@ -22,16 +23,7 @@ export function buildRedFox(scene,art){
  box(wood,0,.12,0,27,.24,17);box(dark,0,16,0,28,.4,18);
  for(const [y,h]of [[6.5,1],[11.25,1.5],[15.7,1.4]])box(plaster,0,y,8.6,28,h,.8);
  for(let i=0;i<=6;i++)box(plaster,-14+i*28/6,11,8.6,i===0||i===6?.8:1.55,10,.8);
- for(const y of [8.9,13.5])for(let i=0;i<6;i++){
-  const x=-14+(i+.5)*28/6;
-  // Glazing is recessed behind jambs; dark backing gives the room depth.
-  box(dark,x,y,6.9,3,3.2,.1);box(glass,x,y,8.15,2.8,3,.06);
-  for(const side of [-1,1])box(stone,x+side*1.52,y,8.8,.25,3.6,1);
-  for(const dy of [-1.67,1.67])box(stone,x,y+dy,8.9,3.5,.22,1.1);
-  for(const side of [-1,1])box(red,x+side*1.38,y,8.35,.11,3.15,.15);
-  for(const dy of [-1.5,0,1.5])box(red,x,y+dy,8.35,2.85,.1,.15);
-  box(bronze,x,y,8.45,.07,3,.08);
- }
+ buildRedFoxWindows(group,box,{stone,red,bronze,wood,dark,warm});
  for(const [y,w,d]of [[5.8,28.5,18.5],[16.4,29,19],[16.8,29.6,19.6]])box(stone,0,y,0,w,.25,d);
  // Open shopfront: rooms behind glass, not a photograph pasted on a wall.
  for(const x of [-13.5,-8,-2.2,2.2,8,13.5])box(red,x,2.7,8.9,.5,5.4,.7);
@@ -75,7 +67,7 @@ export function buildRedFox(scene,art){
  tube([[9,6.35],[8.7,6.75],[8.75,7.1],[9.1,6.88],[9.45,7.05],[9.63,6.7],[10.05,6.48],[9.6,6.3],[9.48,5.95],[9.8,5.55],[9.2,5.35],[8.6,5.45],[8.42,5.95],[8.7,6.28]],true);
  tube([[9.4,5.4],[10.1,5.2],[10.4,4.95],[9.5,4.9],[6,4.92],[2,4.93],[-2,4.93],[-6,4.94],[-10,5.03],[-11.2,5.18]]);
  const spill=new THREE.PointLight(0xff3825,12,9,2);spill.position.set(0,6,10.2);group.add(spill);
- for(const [material,items]of batches){const mesh=new THREE.InstancedMesh(cube,material,items.length);mesh.name='Red Fox architecture';items.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,0,0);dummy.scale.set(v.w,v.h,v.d);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=material!==glass;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
+ for(const [material,items]of batches){const mesh=new THREE.InstancedMesh(cube,material,items.length);mesh.name='Red Fox architecture';items.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,0,0);dummy.scale.set(v.w,v.h,v.d);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=!material.transparent;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
  scene.userData.buildings ||= [];scene.userData.buildings.push({x:RED_FOX.x,z:RED_FOX.z,hx:14,hz:9});
  return group;
 }
