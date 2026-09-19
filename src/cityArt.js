@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {worldMaterial} from './surfaceMaterials.js';
 import {AVENUES,STREETS} from './metropolis.js';
 // Higgsfield albedo assets are bundled locally; no generation service at runtime.
 export function cityMaterials(){
@@ -7,6 +8,7 @@ export function cityMaterials(){
  const stone=new THREE.MeshStandardMaterial({map:load('stone'),roughness:.92});
  const roof=new THREE.MeshStandardMaterial({color:0x48535b,roughness:.9});
  const asphalt=new THREE.MeshStandardMaterial({map:load('asphalt'),color:0xc2cbd3,roughness:.94,side:THREE.DoubleSide});
+ worldMaterial(facade,20,true);worldMaterial(stone,5);
  return {facade,stone,roof,asphalt,sides:[facade,facade,roof,roof,facade,facade]};
 }
 export function buildCityArt(scene,curve,widthAt,mat){
@@ -20,7 +22,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
  const samples=curve.getSpacedPoints(900),length=curve.getLength();
  let seed=741;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  // Three architectural palettes share the same Higgsfield texture memory.
- const palettes=[0xe6e0d5,0xb7c5cf,0xc7a58e].map(color=>{const m=mat.facade.clone();m.color.setHex(color);return [m,m,mat.roof,mat.roof,m,m];});
+ const palettes=[0xe6e0d5,0xb7c5cf,0xc7a58e].map(color=>{const m=worldMaterial(mat.facade.clone(),20,true);m.color.setHex(color);return [m,m,mat.roof,mat.roof,m,m];});
  const n=Math.floor(length/95);
  for(let i=0;i<n;i++)for(const sign of [-1,1]){
   const t=i/n,p=curve.getPointAt(t),tan=curve.getTangentAt(t),side=new THREE.Vector3(tan.z,0,-tan.x).normalize(),yaw=Math.atan2(tan.x,tan.z);

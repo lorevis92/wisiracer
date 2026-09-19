@@ -178,3 +178,14 @@ Paired-wing lots include small planted forecourts. Geometry stays within existin
 reserved lots. Vegetation is procedural and currently simplified; animated
 pedestrians, realistic shadows and physical-device visual/performance review are
 still outstanding. No new image generation was required for this geometry pass.
+
+### Screenshot-driven material correction
+World-space texture mapping fixes stretched window proportions on instanced
+buildings (four-window facade tile repeats every 20 world units). Secondary
+streets now use the existing Higgsfield asphalt; the flat green foundation is
+replaced with paving. Building bases have raised paved pads and separate shop
+panels, lintels and vertical frames. Local 1024px directional shadows follow the
+player over a 440-unit area. Canair free driving no longer triggers the off-route
+warning, speed penalty or pull toward the race line. Shader appearance and the
+shadow frame-time cost still need live WebGL / phone verification; passing the
+build and unit tests does not establish visual quality.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {worldMaterial} from './surfaceMaterials.js';
 // Plan coordinates; rendered by the masterplan's x/z scale of four.
 export const AVENUES=Array.from({length:17},(_,i)=>-1200+i*135);
 export const STREETS=Array.from({length:22},(_,i)=>-980+i*90);
@@ -32,7 +33,7 @@ export function buildingStyle(l){
 export function buildMetropolis(group,lots,art,fallback){
  const geometries={box:new THREE.BoxGeometry(1,1,1),round:new THREE.CylinderGeometry(.5,.5,1,16),taper:new THREE.CylinderGeometry(.32,.5,1,8),leaf:new THREE.SphereGeometry(.5,10,7)};
  const dummy=new THREE.Object3D(),chunks=new Map(),roof=art?.roof||fallback;
- const palettes=[0xb9c9c7,0xbaaa94,0xccbbaa].map(color=>{const m=art?.facade.clone()||fallback.clone();m.color.setHex(color);return m;});
+ const palettes=[0xb9c9c7,0xbaaa94,0xccbbaa].map(color=>{const m=art?.facade.clone()||fallback.clone();m.color.setHex(color);if(art)worldMaterial(m,20,true);return m;});
  const glass=new THREE.MeshStandardMaterial({color:0x46616a,roughness:.32,metalness:.48});
  const copper=new THREE.MeshStandardMaterial({color:0x776153,roughness:.53,metalness:.4});
  const green=new THREE.MeshStandardMaterial({color:0x425b38,roughness:1});
@@ -45,7 +46,15 @@ export function buildMetropolis(group,lots,art,fallback){
  for(const l of lots){const {x,y,h,w,d}=l,key=`${Math.floor(x/400)}:${Math.floor(y/400)}`,{variant,palette}=buildingStyle(l),facade=palettes[palette];
   // Street podiums anchor the varied towers in a coherent urban scale.
   add(key,facade,x,y,Math.min(h,26),w,variant===2?d*.65:d,-7);
-  add(key,glass,x,y,7,w*1.006,d*(variant===2?.65:1.006),-6);
+  const frontDepth=variant===2?d*.65:d;
+  add(key,stone,x,y,.45,w+1.2,d+1.2,-7.1);
+  for(const side of [-1,1])for(let shop=-2;shop<=2;shop++){
+   const sx=x+shop*w*.175,sy=y+side*(frontDepth/2+.025);
+   add(key,glass,sx,sy,4.8,w*.14,.05,-6.5);
+   add(key,copper,sx,sy,0.3,w*.15,.35,-1.7);
+   add(key,copper,sx-w*.07,sy,4.8,.06,.08,-6.5);
+  }
+  add(key,stone,x,y,1,w*1.005,frontDepth*1.005,.4);
   if(h>26){
    const height=h-26;
    if(variant===0){ // Stepped terraces, all inside the reserved lot.

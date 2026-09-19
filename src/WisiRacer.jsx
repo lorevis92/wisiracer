@@ -345,6 +345,12 @@ function initGame(container, cfg, ui) {
   if(TR.masterplan){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;scene.add(new THREE.HemisphereLight(0xc8e5ff,0x615343,1.25));}
   const sun = new THREE.DirectionalLight(TR.sun, TR.masterplan ? 2.4 : 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
+  if(TR.masterplan){
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+    Object.assign(sun.shadow.camera,{left:-220,right:220,top:220,bottom:-220,near:1,far:1100});
+    sun.shadow.bias=-.00025;sun.shadow.normalBias=.65;scene.add(sun.target);
+  }
 
   /* ------ stelle (con star-warp dinamico) ------ */
   const STAR_N = TR.masterplan ? 0 : 1600;
@@ -425,6 +431,7 @@ function initGame(container, cfg, ui) {
   const len = curve.getLength();
 
   if (TR.city) buildCanair(scene, curve, startT, TR);
+  if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage';}});
 
   /* ------ strada luminosa: nastro largo + piloni verticali ai bordi ------ */
   if (!TR.city) {
@@ -893,7 +900,7 @@ function initGame(container, cfg, ui) {
         player.mesh.children[0].rotation.z = player.yawVel * 0.4 + player.impactRoll;
       }
 
-      if (distC > 95 && phase === "race") {
+      if (!TR.masterplan && distC > 95 && phase === "race") {
         tmpV.copy(cPts[Math.floor(newT * SAMPLES)]).sub(getPos(player)).normalize();
         player.mesh.position.addScaledVector(tmpV, 30 * dt);
         player.speed *= Math.max(0.5, 1 - 0.35 * dt);
@@ -1354,6 +1361,11 @@ function initGame(container, cfg, ui) {
     }
     hudAcc += dt;
     if (hudAcc > 0.1) { hudAcc = 0; pushHud(); }
+    if(TR.masterplan){
+      const p=player.mesh.position;
+      sun.target.position.set(Math.round(p.x/4)*4,0,Math.round(p.z/4)*4);
+      sun.position.copy(sun.target.position).add(new THREE.Vector3(180,400,160));
+    }
     renderer.render(scene, camera);
   }
   pushHud();

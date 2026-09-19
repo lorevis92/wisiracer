@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {worldMaterial} from './surfaceMaterials.js';
 import {AVENUES,STREETS,metropolisLots,buildMetropolis} from './metropolis.js';
 export const CITY_SCALE=4;
 export function cityHalfWidth(t){
@@ -19,9 +20,10 @@ export const landmarks=[['THE RED FOX',-320,-550,24,70,55],['MAWHET ROSET',-740,
 export function buildMasterplan(scene,curve,art){
  const g=new THREE.Group();g.name='Canair masterplan';scene.add(g);
  const grey=new THREE.MeshStandardMaterial({color:0x9db2bf,roughness:.9}),stone=new THREE.MeshStandardMaterial({color:0xc5b799,roughness:1}),rock=new THREE.MeshStandardMaterial({color:0x647560,roughness:1,side:THREE.DoubleSide}),red=new THREE.MeshStandardMaterial({color:0xb85440,roughness:.8}),road=new THREE.MeshStandardMaterial({color:0x4c606a});
+ if(art){road.map=art.asphalt.map;road.color.setHex(0xc2cbd3);road.roughness=.94;worldMaterial(road,6);}
  const cube=new THREE.BoxGeometry(1,1,1);
  const box=(n,x,y,z,w,d,h,m=grey)=>{const o=new THREE.Mesh(cube,m);o.name=n;o.position.set(x,z+h/2-7,-y);o.scale.set(w,h,d);if(n.startsWith("Oremo")){o.scale.x/=CITY_SCALE;o.scale.z/=CITY_SCALE;}g.add(o);return o;};
- box('Fondazioni città',300,0,-13,3400,2300,12,new THREE.MeshStandardMaterial({color:0x577965}));
+ box('Fondazioni città',300,0,-13,3400,2300,12,art?.stone || new THREE.MeshStandardMaterial({color:0xaaa597}));
  for(const y of [-350,-50,250])box('Strada secondaria',-50,y,-.5,2200,40,.3,road);
  for(const x of [-750,-400,0,400,750])box('Strada secondaria',x,-25,-.5,32,1650,.3,road);
  box('Piazza centrale',100,100,0,180,150,.5,stone);
