@@ -284,3 +284,14 @@ remain opaque; only Red Fox has detailed visible rooms. Run
 geometry check. The audit is not GPU validation. The whole city is not finished:
 individual hero designs, realistic vegetation, interiors, material maps and
 physical-phone performance remain open in CITY_CHECKLIST.md.
+
+### Two individually authored narrative landmarks
+Mawhet Roset and Lube Tone now use dedicated models, replacing the old proxies
+and labels. Mawhet has furnished bedroom bays, small balconies and a breakfast
+room. Lube Tone has a glazed furnished hall, stage, piano, drums and terrace.
+The model positions are recorded in AUTHORED_LANDMARKS and register matching
+collision footprints. Mawhet shifts within its reserved neighborhood to avoid
+the older avenue; both footprints clear grid streets and the race corridor.
+The architecture viewer includes both shared models and their Higgsfield photos.
+Room descriptions follow chapter 2 and the upscale bar setting follows chapter 5;
+exterior styling is an interpretation. GPU/phone review remains outstanding.

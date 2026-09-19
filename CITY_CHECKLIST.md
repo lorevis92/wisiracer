@@ -49,3 +49,17 @@ Browser verification is currently blocked by Vercel login in the agent browser.
 
 This pass applies six architectural families; it is not a completed bespoke
 reconstruction of every building, nor a photoreal match to the generated photos.
+
+## Authored places — Mawhet Roset and Lube Tone
+- [x] Separate Higgsfield references, derived from the available chapters
+- [x] Replace landmark proxy boxes and old floating labels
+- [x] Mawhet Roset: breakfast room, furnished bedroom bays and small balconies
+- [x] Lube Tone: bronze canopy, glazed music room, tables, stage and instruments
+- [x] Footprints checked against grid roads and race corridor
+- [x] Shared game/review models selectable in architecture.html
+- [ ] Visual verification, side-elevation refinement and material detail
+
+Chapter 2 supplies the modest lodging and room contents; chapter 5 supplies
+Lube Tone's upscale music setting. Facade styling is proposed game art direction.
+Interiors are visual scenery; pedestrians, entering rooms, music and service
+interactions are not implemented by this pass.
