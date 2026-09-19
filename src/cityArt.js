@@ -31,6 +31,8 @@ export function buildCityArt(scene,curve,widthAt,mat){
   if(samples.some(q=>Math.hypot(q.x-center.x,q.z-center.z)<widthAt(t)+depth/2+6))continue;
   const planX=center.x/4,planY=-center.z/4,margin=Math.hypot(depth,w)/8;
   if([...AVENUES,-750,-400,0,400,750].some(x=>Math.abs(planX-x)<margin+12)||[...STREETS,-350,-50,250].some(y=>Math.abs(planY-y)<margin+21))continue;
+  scene.userData.buildings ||= [];
+  scene.userData.buildings.push({x:center.x,z:center.z,hx:depth/2,hz:w/2,yaw});
   const place=(out,along,y)=>center.clone().addScaledVector(side,out).addScaledVector(tan,along).setY(y-7);
   add(palettes[Math.floor(i/12)%palettes.length],place(0,0,h/2),[depth,h,w],yaw);
   add(mat.roof,place(0,0,h+.7),[depth+2,1.4,w+2],yaw);
@@ -56,6 +58,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
   add(light,lamp.clone().addScaledVector(side,-sign*6).setY(18.5),[3,.35,1.4],yaw);
  }
  // Red Fox street frontage, connected visually to its existing plot.
+ scene.userData.buildings ||= [];scene.userData.buildings.push({x:-1280,z:2470,hx:40,hz:24});
  const fox=new THREE.Group();fox.name='The Red Fox frontage';fox.position.set(-1280,-7,2470);group.add(fox);
  const box=(m,x,y,z,w,h,d)=>{const o=new THREE.Mesh(cube,m);o.position.set(x,y,z);o.scale.set(w,h,d);fox.add(o);};
  box(mat.sides,0,19,0,78,38,42);box(mat.roof,0,39,0,82,2,46);

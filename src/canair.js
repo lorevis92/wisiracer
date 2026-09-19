@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildUrbanDetails} from './urbanDetails.js';
 import {buildCityLandscape} from './cityLandscape.js';
 import {cityMaterials,buildCityArt} from './cityArt.js';
 import {buildMasterplan} from './masterplan.js';
@@ -82,6 +83,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   if (track.masterplan) {
     buildMasterplan(scene,curve,art);
     buildCityLandscape(scene,art.stone);
+    buildUrbanDetails(scene,curve,art);
     buildCityArt(scene,curve,widthAt,art);
     // Broken lane markings orient the driver without closing the street.
     const paint=new THREE.MeshBasicMaterial({color:0xe9e1cc});

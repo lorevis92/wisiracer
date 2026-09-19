@@ -200,3 +200,15 @@ in Three.js; the generated images are materials, not generated 3D models.
 A water plane surrounds the existing city platform. Shoreline geometry remains
 rectangular and is not a finished natural coast. Visual GPU inspection and
 physical-device performance remain unverified.
+
+### Urban network and physical building footprints
+Added segmented sidewalks and curbs to the secondary street grid, avoiding
+crossings, parallel overlapping streets and the race corridor. Instanced street
+furniture includes shelters, benches and information panels. Destination signs
+mark the central gardens, Red Fox and Utgenra; the south city edge gains a stepped
+quay. Buildings now have indexed horizontal footprint contacts for the player,
+including rotated roadside frontages and landmark volumes. These are arcade
+podium contacts, not triangle-accurate architecture or pedestrian collisions.
+Contact tests cover wall sliding, rotation, inside recovery and spatial lookup.
+Remaining: visual browser/device verification, pedestrian animation, district-
+specific authored assets, natural shoreline and performance measurements.

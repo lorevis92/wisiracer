@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { MASTERPLAN } from "./masterplan.js";
 import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
 import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, tiltSteering } from "./driving.js";
+import {buildingIndex,resolveBuilding} from "./cityCollisions.js";
 import { resolveContact, resolveBarrier } from "./collisions.js";
 
 /* =====================================================================
@@ -431,6 +432,7 @@ function initGame(container, cfg, ui) {
   const len = curve.getLength();
 
   if (TR.city) buildCanair(scene, curve, startT, TR);
+  const nearbyBuildings=buildingIndex(scene.userData.buildings||[]);
   if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=o.castShadow||o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage';}});
 
   /* ------ strada luminosa: nastro largo + piloni verticali ai bordi ------ */
@@ -1078,6 +1080,14 @@ function initGame(container, cfg, ui) {
           if(hit.speed>35){damage(a,Math.min(9,hit.speed*0.05),b);damage(b,Math.min(9,hit.speed*0.05),a);}
         }
       }
+      if(TR.masterplan)racers.forEach((r,i)=>{
+        if(!r.alive||!r.isPlayer)return;
+        const old={...bodies[i]};let strongest=null;
+        for(const box of nearbyBuildings(bodies[i].x,bodies[i].z)){
+          const hit=resolveBuilding(bodies[i],box);if(hit&&(!strongest||hit.speed>strongest.speed))strongest=hit;
+        }
+        if(strongest){applyBody(r,bodies[i],old);if(elapsed-r.wallHitT>.3){r.wallHitT=elapsed;feedback(r,strongest.speed,strongest.nx,strongest.nz);}}
+      });
       if(TR.city && !TR.masterplan)racers.forEach((r,i)=>{
         if(!r.alive)return;
         const {t}=closestT(r.mesh.position,r.t);

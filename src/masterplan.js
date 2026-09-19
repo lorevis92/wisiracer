@@ -29,6 +29,9 @@ export function buildMasterplan(scene,curve,art){
  box('Piazza centrale',100,100,0,180,150,.5,stone);
  const samples=curve.getSpacedPoints(1600).map(p=>new THREE.Vector3(p.x/CITY_SCALE,p.y,p.z/CITY_SCALE));
  const lots=metropolisLots(samples,landmarks);
+ scene.userData.buildings ||= [];
+ for(const l of lots)scene.userData.buildings.push({x:l.x*4,z:-l.y*4,hx:l.w*2,hz:l.d*2*(Math.abs(Math.round(l.x*7+l.y*11))%4===2?.65:1)});
+ for(const [,x,y,,w,d]of landmarks)scene.userData.buildings.push({x:x*4,z:-y*4,hx:w/2,hz:d/2});
  g.userData.metropolis=buildMetropolis(g,lots,art,grey);
  for(const x of AVENUES)box('Viale urbano',x,-35,-.45,22,2010,.3,road);
  for(const y of STREETS)box('Trasversale urbana',-120,y,-.45,2160,16,.3,road);
