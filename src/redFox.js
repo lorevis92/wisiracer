@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildRedFoxInterior} from './redFoxInterior.js';
 export const RED_FOX={x:-1280,z:2470,width:28,depth:18,height:17};
 export function buildRedFox(scene,art){
  const group=new THREE.Group();group.name='Red Fox detailed building';group.position.set(RED_FOX.x,-7,RED_FOX.z);scene.add(group);
@@ -7,7 +8,7 @@ export function buildRedFox(scene,art){
  const bronze=new THREE.MeshStandardMaterial({color:0x9c8256,metalness:.7,roughness:.3});
  const dark=new THREE.MeshStandardMaterial({color:0x202a2c,roughness:.7});
  const wood=new THREE.MeshStandardMaterial({color:0x493728,roughness:.78});
- const glass=new THREE.MeshStandardMaterial({color:0x84999b,metalness:.12,roughness:.16,transparent:true,opacity:.3,depthWrite:false});
+ const glass=new THREE.MeshStandardMaterial({color:0xc5d1cc,metalness:0,roughness:.12,transparent:true,opacity:.14,depthWrite:false});
  const warm=new THREE.MeshStandardMaterial({color:0xeac58c,emissive:0xe5a259,emissiveIntensity:.65});
  const paving=new THREE.MeshStandardMaterial({color:0x909795,roughness:.95});
  const batches=new Map(),cube=new THREE.BoxGeometry(1,1,1),dummy=new THREE.Object3D();
@@ -41,10 +42,7 @@ export function buildRedFox(scene,art){
  }
  for(const x of [-1,1]){box(red,x,.4,8.1,1.8,.8,.18);box(glass,x,2.5,8.1,1.8,3.4,.08);box(bronze,x*.2,2.1,8.3,.1,.6,.12);}
  for(const x of [-2,0,2])box(red,x,2.5,8.1,.14,5,.25);
- // Interior bar, bottles, booth seating and hanging lamps.
- box(wood,0,1.2,-3,20,2.4,1.3);box(bronze,0,2.45,-3,20.5,.15,1.6);
- for(const y of [2.8,3.6,4.4]){box(wood,0,y,-7.9,23,.12,.8);for(let i=0;i<24;i++)box(i%3===0?bronze:dark,-11+i*.95,y+.27,-7.8,.17,.45,.17);}
- for(const x of [-9,-5,5,9]){box(wood,x,1.3,3,2.2,.15,2.2);for(const dx of [-1.5,1.5])box(red,x+dx,.7,3,.9,1.4,1);box(warm,x,4,0,.6,.4,.6);box(bronze,x,4.6,0,.06,.8,.06);}
+ buildRedFoxInterior(group);
  for(const x of [-12.8,12.8]){box(bronze,x,3.8,9.6,.12,.8,.8);box(warm,x,3.5,10,.32,.65,.3);box(dark,x,3.9,10,.5,.15,.5);}
  // Painted timber pilasters and recessed panels give the pub a crafted frontage.
  for(const x of [-13.5,-8,-2.2,2.2,8,13.5]){

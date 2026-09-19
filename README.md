@@ -247,3 +247,15 @@ are 3D tubes with additive halos and a small local red light. Brick is replaced
 by warm plaster and the shopfront gains raised oxblood timber panels. The earlier
 brick reference link is removed from the close-up viewer because it is obsolete.
 Appearance is still pending a live GPU review; this is not a visual sign-off.
+
+### Furnished Red Fox ground floor
+The shared building now contains a separate instanced 3D pub interior: floorboards,
+wainscoting, ceiling beams, a paneled bar with taps and register, labeled bottles,
+stools, upholstered booths, chairs and table settings. Pendant bulbs and shelf
+strips use emissive materials; two bounded warm point lights illuminate the room
+without extra shadow maps. Shopfront glass opacity is reduced to expose the room.
+The review page has exterior/interior camera presets using the actual game model.
+The racing collision still covers the building: this is a furnished visible room,
+not yet a walk-in venue with staff, orders or interactions. Upper floors have not
+been furnished in this pass. Build, existing 24 tests and finite instance bounds
+were checked; live GPU appearance and S24 Ultra frame time remain unverified.

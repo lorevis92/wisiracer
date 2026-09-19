@@ -10,3 +10,12 @@ const art=cityMaterials(),fox=buildRedFox(scene,art);fox.position.set(0,0,0);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(160,160),new THREE.MeshStandardMaterial({map:art.asphalt.map,color:0x68727b,roughness:.95}));ground.material.map.repeat.set(30,30);ground.rotation.x=-Math.PI/2;ground.position.y=-.12;ground.receiveShadow=true;scene.add(ground);
 const camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,.1,250);camera.position.set(33,16,45);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,7,3);controls.minDistance=8;controls.maxDistance=100;controls.maxPolarAngle=Math.PI*.49;controls.enableDamping=true;
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera);});
+
+// The same furnished room as in the city; no substitute render or image.
+function viewInterior(inside){
+ controls.minDistance=inside?.5:8;controls.maxDistance=inside?18:100;
+ camera.position.set(...(inside?[.2,2.65,7.3]:[33,16,45]));
+ controls.target.set(...(inside?[0,2,-3.9]:[0,7,3]));controls.update();
+}
+document.getElementById('interior').addEventListener('click',()=>viewInterior(true));
+document.getElementById('exterior').addEventListener('click',()=>viewInterior(false));
