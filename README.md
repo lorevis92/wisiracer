@@ -267,3 +267,20 @@ have partially lowered blinds. Separate sash frames, brass handles, projecting
 sills and selectively raised lower sashes add depth. Small room boxes contain
 lamps or shelving, with a few warm emissive interiors and no additional lights.
 Curtain surfaces merge into three meshes. Appearance still needs phone review.
+
+### Canair architectural families
+Higgsfield generated six architectural photographs, bundled as review-only
+references under public/assets/canair/references. The modeled circuit buildings
+use recessed openings, independent frames, selected curtains/balconies, projecting
+bays, bronze fins and type-specific roofs. Secondary metropolitan lots gain
+entrances, planters, canopies and selected terrace railings. Existing footprints
+and driving layout remain in place. Facade batches are grouped into 700-unit
+spatial cells so off-screen cells can be culled.
+
+/architecture.html compares the actual shared geometry with each reference.
+The generated photos are not used as fake game screenshots. Most new windows
+remain opaque; only Red Fox has detailed visible rooms. Run
+`node scripts/audit-city-architecture.mjs` for the coordinate registry and finite
+geometry check. The audit is not GPU validation. The whole city is not finished:
+individual hero designs, realistic vegetation, interiors, material maps and
+physical-phone performance remain open in CITY_CHECKLIST.md.

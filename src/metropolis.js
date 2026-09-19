@@ -77,6 +77,25 @@ export function buildMetropolis(group,lots,art,fallback){
     for(const side of [-1,1])add(key,copper,x+side*w*.43,y,height*.65,.3,d*.87,19);
    }
   }
+  // Secondary streets gain distinct entrance thresholds, sunshades and services.
+  const frontage=frontDepth/2+.12;
+  add(key,copper,x,y+frontage,5.3,w*.18,.08,-6.7);
+  add(key,glass,x,y+frontage+.08,4.7,w*.14,.08,-6.5);
+  add(key,stone,x,y+frontage+.8,.2,w*.25,1.6,-6.95);
+  add(key,copper,x,y+frontage+.6,.2,w*.28,1.4,-1.1);
+  for(const side of [-1,1]){
+   add(key,stone,x+side*w*.35,y+frontage+.3,.8,w*.1,.65,-6.9);
+   add(key,green,x+side*w*.35,y+frontage+.3,1,w*.095,.6,-6.1);
+  }
+  add(key,roof,x+w*.22,y-d*.16,2.2,w*.13,d*.16,h-6.4);
+  // Residential terrace railings are lighter and finer than tower fins.
+  if(variant===0&&h<110)for(let k=0;k<3;k++){
+   const size=.92-k*.13,bottom=19+(k+1)*(h-26)/4+1.1;
+   for(const side of [-1,1]){
+    add(key,copper,x,y+side*d*size/2,.14,w*size,.08,bottom+1.2);
+    for(let n=-3;n<=3;n++)add(key,copper,x+n*w*size/7,y+side*d*size/2,1.2,.055,.055,bottom);
+   }
+  }
   // Small planted courts sit inside the reserved footprint, away from traffic.
   if(variant===2){
    for(const side of [-1,1]){

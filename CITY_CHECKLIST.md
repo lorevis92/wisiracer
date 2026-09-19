@@ -32,3 +32,20 @@ GTA is a visual reference, not an achieved quality claim.
 No task is marked visually verified on the basis of a build or unit test.
 
 Browser verification is currently blocked by Vercel login in the agent browser.
+
+## Architectural reference pass — 19 September
+- [x] Six Higgsfield references: classic residence, bronze office, terraced hotel,
+  terracotta atelier, bay-window residence, covered market
+- [x] Six reusable modeled facade designs on eligible circuit buildings
+- [x] Secondary-lot thresholds, canopies, planters and residential terrace rails
+- [x] Spatially batched circuit details for frustum culling
+- [x] Model/reference comparison page at /architecture.html
+- [x] Reproducible coordinate registry: CITY_ARCHITECTURE_PROGRESS.json
+- [ ] Individual art-direction and image comparison for each route building
+- [ ] Unique landmark silhouettes and bespoke businesses beyond Red Fox
+- [ ] Replace secondary-lot facade imagery with detailed architectural models
+- [ ] Furnish visible rooms beyond Red Fox (most new glazing is opaque)
+- [ ] GPU/phone review, measured LOD tuning, texture/lighting refinement
+
+This pass applies six architectural families; it is not a completed bespoke
+reconstruction of every building, nor a photoreal match to the generated photos.

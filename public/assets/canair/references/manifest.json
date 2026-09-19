@@ -1,0 +1,42 @@
+{
+  "generator": "Higgsfield gpt_image_2_5",
+  "purpose": "Architectural references, not game screenshots",
+  "references": [
+    {
+      "index": 0,
+      "job_id": "ebd5f883-596a-4c74-b8e2-3b2cd3121028",
+      "prompt": "Six-storey warm limestone apartment house, deep individual sash windows, varied curtains, projecting cornice, dark green bakery shopfront, tiny iron Juliet balconies.",
+      "file": "public/assets/canair/references/type-0.webp"
+    },
+    {
+      "index": 1,
+      "job_id": "08e77434-3ff4-4ba7-911e-fe9412f953ad",
+      "prompt": "Twelve-storey contemporary glass office building, recessed central lobby, slim bronze vertical fins, double-height stone base, rooftop planted terraces, understated near-future technology.",
+      "file": "public/assets/canair/references/type-1.webp"
+    },
+    {
+      "index": 2,
+      "job_id": "f237b64a-7410-4799-bfba-9a3dc65cbda7",
+      "prompt": "Five-storey cream plaster corner hotel, three stepped roof terraces, bronze canopies, tall recessed windows, balconies with fine metal balustrades, elegant illuminated entrance.",
+      "file": "public/assets/canair/references/type-2.webp"
+    },
+    {
+      "index": 3,
+      "job_id": "1de7fe4a-2f27-4e0c-a97e-1df9abb8c4f2",
+      "prompt": "Four-storey red terracotta arts workshop building, black steel industrial window frames, sawtooth roof profile, large glazed gallery entrance, tactile concrete base.",
+      "file": "public/assets/canair/references/type-3.webp"
+    },
+    {
+      "index": 4,
+      "job_id": "8a127b4e-be30-4ae3-b4b7-72970d19b3b0",
+      "prompt": "Seven-storey pale stone residential building, staggered projecting bay windows, sage window surrounds, balconies with plants, distinct occupied apartments.",
+      "file": "public/assets/canair/references/type-4.webp"
+    },
+    {
+      "index": 5,
+      "job_id": "1fd225c9-536f-4e6b-9afd-e8132991713e",
+      "prompt": "Three-storey modern neighborhood market hall, wide low glass frontage under heavy stone columns, ribbed metal roof, two glazed upper floors, generous covered pedestrian arcade.",
+      "file": "public/assets/canair/references/type-5.webp"
+    }
+  ]
+}
