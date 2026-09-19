@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildRedFox} from './redFox.js';
 import {worldMaterial} from './surfaceMaterials.js';
 import {AVENUES,STREETS} from './metropolis.js';
 // Higgsfield albedo assets are bundled locally; no generation service at runtime.
@@ -30,6 +31,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
   const depth=32+rand()*16,w=50+rand()*27,h=28+Math.floor(rand()*6)*9;
   const center=p.clone().addScaledVector(side,sign*(widthAt(t)+30+depth/2));
   if(samples.some(q=>Math.hypot(q.x-center.x,q.z-center.z)<widthAt(t)+depth/2+6))continue;
+  if(Math.hypot(center.x+1280,center.z-2470)<85)continue;
   const planX=center.x/4,planY=-center.z/4,margin=Math.hypot(depth,w)/8;
   if([...AVENUES,-750,-400,0,400,750].some(x=>Math.abs(planX-x)<margin+12)||[...STREETS,-350,-50,250].some(y=>Math.abs(planY-y)<margin+21))continue;
   scene.userData.buildings ||= [];
@@ -58,17 +60,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
   add(bronze,lamp.clone().addScaledVector(side,-sign*3).setY(19),[7,.5,.7],yaw);
   add(light,lamp.clone().addScaledVector(side,-sign*6).setY(18.5),[3,.35,1.4],yaw);
  }
- // Red Fox street frontage, connected visually to its existing plot.
- scene.userData.buildings ||= [];scene.userData.buildings.push({x:-1280,z:2470,hx:40,hz:24});
- const fox=new THREE.Group();fox.name='The Red Fox frontage';fox.position.set(-1280,-7,2470);group.add(fox);
- const box=(m,x,y,z,w,h,d)=>{const o=new THREE.Mesh(cube,m);o.position.set(x,y,z);o.scale.set(w,h,d);fox.add(o);};
- box(mat.sides,0,19,0,78,38,42);box(mat.roof,0,39,0,82,2,46);
- box(red,0,7,22,80,14,2);
- for(const x of [-28,-14,14,28]){box(glass,x,6.5,23.2,11,10,.5);box(bronze,x,12,25,12,.6,5);}
- box(bronze,0,6,23.2,9,12,.7);
- const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=128;const ctx=canvas.getContext('2d');ctx.fillStyle='#421c19';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#ffe3ac';ctx.font='600 70px serif';ctx.textAlign='center';ctx.fillText('THE RED FOX',512,88);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
- const sign=new THREE.Mesh(new THREE.PlaneGeometry(60,7.5),new THREE.MeshBasicMaterial({map:texture}));sign.position.set(0,18,23);fox.add(sign);
+ buildRedFox(scene,mat);
  for(const [material,items] of batches){const mesh=new THREE.InstancedMesh(cube,material,items.length),dummy=new THREE.Object3D();items.forEach((a,i)=>{dummy.position.copy(a.p);dummy.scale.set(...a.size);dummy.rotation.set(0,a.yaw,0);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();group.add(mesh);}
  return group;
 }

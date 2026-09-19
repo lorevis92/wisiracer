@@ -224,3 +224,18 @@ are disposed once during scene teardown. Fountain animation is tested for finite
 positions and stable object count. See CITY_CHECKLIST.md for remaining scope.
 Live browser verification on 19 September is blocked at Vercel sign-in. No claim
 of GTA-level quality, completed city, or measured device performance is made.
+
+### Red Fox authored building
+Replaces the old frontage block with a 28x18 unit building: open facade shell,
+recessed upper glazing, modeled jambs/sills/mullions, oxblood shopfront, awnings,
+lanterns, bar shelves and seating behind glazing, roof cornice/brackets and HVAC.
+Grey sidewalk slabs have separate joints and a drainage grille. Nearby generic
+frontages are excluded and the old duplicate landmark box is removed.
+Higgsfield reference: `9f72ed03-9dd5-43ff-85a1-55670046e02c`;
+brick material: `e0e29226-81b7-4518-9cda-32f44cba58bc`.
+The reference is a target image, NOT a screenshot of the implemented model.
+`/red-fox.html` provides an orbitable close-up of the actual shared game model.
+Materials are instanced by type. Interior details are visual only; the ship
+collision still covers the building footprint. Side elevations are simpler than
+the main frontage. GPU visual validation remains blocked by Vercel sign-in;
+this work must not be presented as a perfect photoreal reconstruction.
