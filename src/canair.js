@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildCivicQuarter} from './civicQuarter.js';
 import {buildUrbanDetails} from './urbanDetails.js';
 import {buildCityLandscape} from './cityLandscape.js';
 import {cityMaterials,buildCityArt} from './cityArt.js';
@@ -83,6 +84,7 @@ export function buildCanair(scene, curve, startT = 0, track = CANAIR) {
   if (track.masterplan) {
     buildMasterplan(scene,curve,art);
     buildCityLandscape(scene,art.stone);
+    buildCivicQuarter(scene,art);
     buildUrbanDetails(scene,curve,art);
     buildCityArt(scene,curve,widthAt,art);
     // Broken lane markings orient the driver without closing the street.

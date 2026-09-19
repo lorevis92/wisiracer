@@ -212,3 +212,15 @@ podium contacts, not triangle-accurate architecture or pedestrian collisions.
 Contact tests cover wall sliding, rotation, inside recovery and spatial lookup.
 Remaining: visual browser/device verification, pedestrian animation, district-
 specific authored assets, natural shoreline and performance measurements.
+
+### Civic plaza and office district
+Added a plaza within the existing reserved central square with an animated
+12-jet fountain, a curved-roof pavilion, seating and two bronze sculptures.
+Downtown towers use Higgsfield curtain-wall texture
+`82ea79cc-805e-4f2e-9877-fd14fbc328cc` (512px WebP). A compact PMREM sky/ground
+environment supplies static reflections for glass and metal; this is not
+screen-space reflection or a capture of surrounding buildings. Shared resources
+are disposed once during scene teardown. Fountain animation is tested for finite
+positions and stable object count. See CITY_CHECKLIST.md for remaining scope.
+Live browser verification on 19 September is blocked at Vercel sign-in. No claim
+of GTA-level quality, completed city, or measured device performance is made.

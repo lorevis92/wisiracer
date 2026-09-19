@@ -43,7 +43,7 @@ export function buildMetropolis(group,lots,art,fallback){
   key+=':'+shape+':'+material.uuid;
   if(!chunks.has(key))chunks.set(key,{material,shape,items:[]});chunks.get(key).items.push({x,y,h,w,d,bottom});
  }
- for(const l of lots){const {x,y,h,w,d}=l,key=`${Math.floor(x/400)}:${Math.floor(y/400)}`,{variant,palette}=buildingStyle(l),facade=palettes[palette];
+ for(const l of lots){const {x,y,h,w,d}=l,key=`${Math.floor(x/400)}:${Math.floor(y/400)}`,{variant,palette}=buildingStyle(l),facade=l.district==='centro'&&l.tower&&art?.curtain?art.curtain:palettes[palette];
   // Street podiums anchor the varied towers in a coherent urban scale.
   add(key,facade,x,y,Math.min(h,26),w,variant===2?d*.65:d,-7);
   const frontDepth=variant===2?d*.65:d;

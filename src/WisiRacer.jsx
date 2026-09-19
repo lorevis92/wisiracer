@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+import {cityEnvironment} from "./cityEnvironment.js";
 import { MASTERPLAN } from "./masterplan.js";
 import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
 import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, tiltSteering } from "./driving.js";
@@ -432,6 +433,7 @@ function initGame(container, cfg, ui) {
   const len = curve.getLength();
 
   if (TR.city) buildCanair(scene, curve, startT, TR);
+  const disposeCityEnvironment=TR.masterplan?cityEnvironment(renderer,scene):()=>{};
   const nearbyBuildings=buildingIndex(scene.userData.buildings||[]);
   if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=o.castShadow||o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage';}});
 
@@ -1376,6 +1378,7 @@ function initGame(container, cfg, ui) {
       sun.target.position.set(Math.round(p.x/4)*4,0,Math.round(p.z/4)*4);
       sun.position.copy(sun.target.position).add(new THREE.Vector3(180,400,160));
     }
+    for(const updateCity of scene.userData.cityAnimations||[])updateCity(elapsed);
     renderer.render(scene, camera);
   }
   pushHud();
@@ -1388,10 +1391,12 @@ function initGame(container, cfg, ui) {
     window.removeEventListener("keyup", onKeyUp);
     window.removeEventListener("resize", onResize);
     audio.dispose();
+    const disposed=new Set();const disposeOnce=v=>{if(v&&!disposed.has(v)){disposed.add(v);v.dispose();}};
     scene.traverse(o => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material) { const mats=Array.isArray(o.material)?o.material:[o.material]; mats.forEach(m=>{for(const key of ["map","normalMap","roughnessMap","bumpMap","emissiveMap"])m[key]?.dispose();m.dispose();}); }
+      if (o.geometry) disposeOnce(o.geometry);
+      if (o.material) { const mats=Array.isArray(o.material)?o.material:[o.material]; mats.forEach(m=>{for(const key of ["map","normalMap","roughnessMap","bumpMap","emissiveMap"])disposeOnce(m[key]);disposeOnce(m);}); }
     });
+    disposeCityEnvironment();
     renderer.dispose();
     if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);
   };

@@ -9,7 +9,8 @@ export function cityMaterials(){
  const roof=new THREE.MeshStandardMaterial({color:0x48535b,roughness:.9});
  const asphalt=new THREE.MeshStandardMaterial({map:load('asphalt'),color:0xc2cbd3,roughness:.94,side:THREE.DoubleSide});
  worldMaterial(facade,20,true);worldMaterial(stone,5);
- return {facade,stone,roof,asphalt,sides:[facade,facade,roof,roof,facade,facade]};
+ const curtain=worldMaterial(new THREE.MeshStandardMaterial({map:load("curtain"),color:0xc3d5d7,metalness:.5,roughness:.23,envMapIntensity:.8}),16,true);
+ return {curtain,facade,stone,roof,asphalt,sides:[facade,facade,roof,roof,facade,facade]};
 }
 export function buildCityArt(scene,curve,widthAt,mat){
  const group=new THREE.Group();group.name='Canair architectural frontage';scene.add(group);
