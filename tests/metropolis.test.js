@@ -22,3 +22,10 @@ test('city generation is deterministic and contains distinct height districts',(
  assert.ok(lots.some(l=>l.h<40));
  assert.equal(new Set(lots.map(l=>l.district)).size,3);
 });
+
+import {buildingStyle,buildMetropolis} from '../src/metropolis.js';
+test('all four building forms appear and generated instance bounds are finite',()=>{
+ assert.equal(new Set(lots.map(l=>buildingStyle(l).variant)).size,4);
+ const group=new THREE.Group();buildMetropolis(group,lots,null,new THREE.MeshStandardMaterial());
+ group.traverse(o=>{if(o.isInstancedMesh){assert.ok(Number.isFinite(o.boundingSphere.radius));assert.ok(o.boundingSphere.radius>0);}});
+});

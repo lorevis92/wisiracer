@@ -168,3 +168,13 @@ Street frontage skips grid intersections. Spatial instancing batches allow
 frustum culling; textures reuse existing Higgsfield assets. This is a structural
 city expansion, not individually authored photoreal buildings or a completed
 pedestrian simulation. Physical-device performance remains unmeasured.
+
+### District architecture pass
+Four deterministic building families replace the repeated tower silhouette:
+stepped green terraces, oval shafts with bronze fins, paired wings with recessed
+connections, and octagonal tapered crowns. District palettes use grey-green,
+bronze and warm limestone tones with the existing Higgsfield facade assets.
+Paired-wing lots include small planted forecourts. Geometry stays within existing
+reserved lots. Vegetation is procedural and currently simplified; animated
+pedestrians, realistic shadows and physical-device visual/performance review are
+still outstanding. No new image generation was required for this geometry pass.
