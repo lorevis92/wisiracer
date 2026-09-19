@@ -1,5 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
+import {cityEnvironment} from "./cityEnvironment.js";
+import { MASTERPLAN } from "./masterplan.js";
+import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
+import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, tiltSteering } from "./driving.js";
+import {buildingIndex,resolveBuilding} from "./cityCollisions.js";
+import { resolveContact, resolveBarrier } from "./collisions.js";
 
 /* =====================================================================
    WISIRACER — STARFIGHTER GRAND PRIX · un gioco WiSiVERSE
@@ -16,13 +22,16 @@ const DIFFS = {
 const ASSET_PATHS = { ship: "/assets/ship_whiskey.png", pilot: "/assets/pilot_whiskey.png" };
 
 const MODES = {
-  grand_prix:    { label: "Grand Prix",      icon: "🏁", laps: 3, desc: "3 giri contro 6 rivali. Vince chi taglia per primo il traguardo. Le armi sono consentite — esplodere costa solo tempo." },
+  grand_prix:    { label: "Grand Prix",      icon: "🏁", laps: 3, desc: "3 giri contro gli altri Whiskey. Vince chi taglia per primo il traguardo. Le armi sono consentite — esplodere costa solo tempo." },
   survival_race: { label: "Survival Race",   icon: "💀", laps: 3, desc: "3 giri ma niente respawn: se il tuo scafo arriva a zero sei eliminato. Per vincere devi anche arrivare vivo." },
   last_flying:   { label: "Last One Flying", icon: "⚔️", laps: 0, desc: "Niente traguardo. Caccia totale lungo il circuito: vince l'ultima navicella ancora in volo." },
   timed:         { label: "Timed Survival",  icon: "⏱️", laps: 0, desc: "Sopravvivi 90 secondi mentre tutti ti danno la caccia. Ogni abbattimento vale punti extra." },
 };
 
 const TRACKS = {
+  masterplan: MASTERPLAN,
+  practice: PRACTICE,
+  canair: CANAIR,
   nebula: {
     label: "Nebula Run", desc: "Percorso galattico tra nubi cosmiche blu-viola e campi di asteroidi.",
     bg: 0x05060f, fog: 0x14123a, fogD: 0.0011, amb: 0x6677ff, sun: 0x9db4ff,
@@ -54,27 +63,17 @@ const TRACKS = {
 };
 
 const TRACK_ICONS = {
+  masterplan: "🏙️", practice: "🏁", canair: "🌃",
   nebula:'🌌', ringworld:'🪐', vortex_gate:'⚡', crimson_dust:'🔴',
   dark_matter:'⬛', ice_cathedral:'❄️', solar_forge:'☀️', ghost_nebula:'👻',
 };
 
-const AI_ROSTER = [
-  { name: "Vex",  color: 0xff4d4d },
-  { name: "Korr", color: 0xff9b3d },
-  { name: "Nyra", color: 0x69f06e },
-  { name: "Dax",  color: 0xc77dff },
-  { name: "Zhul", color: 0xffe14d },
-  { name: "Mira", color: 0xff6ad5 },
-];
-
+// Portraits will be supplied from the actual paintings. Never relabel old alien art.
 const PILOTS = [
-  { id:"whiskey", name:"Whiskey", color:0x4fc3f7, shipImg:"/assets/ship_whiskey.png", pilotImg:"/assets/pilot_whiskey.png", cardImg:"/assets/card_whiskey.png", desc:"Pilota misterioso, faccia blu. Nessuno sa da dove viene.", ship:"W-Shaped Starfighter" },
-  { id:"vex",     name:"Vex",     color:0xff4d4d, shipImg:"/assets/ship_vex.png",     pilotImg:"/assets/pilot_vex.png",     cardImg:"/assets/card_vex.png",     desc:"Rettiliano aggressivo. Spietato in gara e fuori.",         ship:"Razor Blade" },
-  { id:"korr",    name:"Korr",    color:0xff9b3d, shipImg:"/assets/ship_korr.png",    pilotImg:"/assets/pilot_korr.png",    cardImg:"/assets/card_korr.png",    desc:"Massiccio e inarrestabile. La sua nave è un carro armato.", ship:"Assault Cruiser" },
-  { id:"nyra",    name:"Nyra",    color:0x69f06e, shipImg:"/assets/ship_nyra.png",    pilotImg:"/assets/pilot_nyra.png",    cardImg:"/assets/card_nyra.png",    desc:"Velocissima e sfuggente. Nessuno la prende.",               ship:"Y-Interceptor" },
-  { id:"dax",     name:"Dax",     color:0xc77dff, shipImg:"/assets/ship_dax.png",     pilotImg:"/assets/pilot_dax.png",     cardImg:"/assets/card_dax.png",     desc:"Preciso come un computer. Calcola ogni mossa.",             ship:"Hex Module" },
-  { id:"zhul",    name:"Zhul",    color:0xffe14d, shipImg:"/assets/ship_zhul.png",    pilotImg:"/assets/pilot_zhul.png",   cardImg:"/assets/card_zhul.png",    desc:"Enigmatico e antico. La sua nave sembra viva.",             ship:"Manta Gold" },
-  { id:"mira",    name:"Mira",    color:0xff6ad5, shipImg:"/assets/ship_mira.png",    pilotImg:"/assets/pilot_mira.png",   cardImg:"/assets/card_mira.png",    desc:"Elegante e letale. La perfezione ha una forma.",            ship:"Delta Chrome" },
+  { id:"whiskey", name:"Whiskey", color:0x4777a0, desc:"One soul, many shapes.", ship:"W-Racer · Blu Whiskey" },
+  { id:"monna", name:"Monna Whiskey", color:0xc3a46b, desc:"Il sorriso incontra la velocità.", ship:"W-Racer · Oro antico" },
+  { id:"bacco", name:"Bacco Whiskey", color:0xb54865, desc:"Un altro volto della stessa anima.", ship:"W-Racer · Rosso vino" },
+  { id:"perla", name:"Whiskey con l’orecchino di perla", color:0x7bd7cf, desc:"Una luce inconfondibile nella notte di Canair.", ship:"W-Racer · Madreperla" },
 ];
 
 const GP_POINTS = [10, 8, 6, 4, 3, 2, 1];
@@ -247,6 +246,11 @@ function makeAudio() {
     laser()      { blip(950, 240,  0.09, "square",   0.11); },
     enemyLaser() { blip(620, 180,  0.09, "square",   0.06); },
     hit()        { noise(0.08, 0.16, 1800); },
+    collision(speed) {
+      const strength = Math.min(1, speed / 95);
+      noise(0.06 + strength * 0.16, 0.06 + strength * 0.2, 900 + strength * 2400);
+      blip(85 + strength * 100, 35, 0.12 + strength * 0.12, "triangle", 0.06 + strength * 0.16);
+    },
     explode()    { noise(0.5,  0.5,  700); blip(180, 40, 0.4, "sawtooth", 0.22); },
     pickup()     { blip(440,  1320, 0.18, "sine",    0.14); },
     count(n) {
@@ -309,13 +313,13 @@ function makeAudio() {
 
 /* ========================== MOTORE DI GIOCO ========================== */
 function initGame(container, cfg, ui) {
-  const TR = TRACKS[cfg.track], MD = MODES[cfg.mode], DF = DIFFS[cfg.diff];
+  const TR = TRACKS[cfg.track], MD = TRACKS[cfg.track].practice ? {...MODES.grand_prix, laps: 1} : MODES[cfg.mode], DF = DIFFS[cfg.diff];
   const keys = cfg.keys;
   const mirRef = cfg.mirRef || { current: { x: 0, y: 0 } };
-  const RESPAWN = cfg.mode === "grand_prix";
+  const RESPAWN = TR.practice || cfg.mode === "grand_prix";
   const RACEMODE = MD.laps > 0;
-  const TIMED = cfg.mode === "timed";
-  const ARENA = cfg.mode === "last_flying";
+  const TIMED = !TR.practice && cfg.mode === "timed";
+  const ARENA = !TR.practice && cfg.mode === "last_flying";
 
   const audio = makeAudio(); audio.ensure();
 
@@ -330,7 +334,7 @@ function initGame(container, cfg, ui) {
   const W = () => container.clientWidth || 800;
   const H = () => container.clientHeight || 600;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cfg.renderScale || 1.25));
   renderer.setSize(W(), H());
   container.appendChild(renderer.domElement);
 
@@ -339,12 +343,19 @@ function initGame(container, cfg, ui) {
   scene.fog = new THREE.FogExp2(TR.fog, TR.fogD);
   const camera = new THREE.PerspectiveCamera(78, W() / H(), 0.1, 6000);
 
-  scene.add(new THREE.AmbientLight(TR.amb, 0.6));
-  const sun = new THREE.DirectionalLight(TR.sun, 1.1);
+  scene.add(new THREE.AmbientLight(TR.amb, TR.masterplan ? .65 : TR.city ? 1.25 : 0.6));
+  if(TR.masterplan){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;scene.add(new THREE.HemisphereLight(0xc8e5ff,0x615343,1.25));}
+  const sun = new THREE.DirectionalLight(TR.sun, TR.masterplan ? 2.4 : 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
+  if(TR.masterplan){
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+    Object.assign(sun.shadow.camera,{left:-220,right:220,top:220,bottom:-220,near:1,far:1100});
+    sun.shadow.bias=-.00025;sun.shadow.normalBias=.65;scene.add(sun.target);
+  }
 
   /* ------ stelle (con star-warp dinamico) ------ */
-  const STAR_N = 1600;
+  const STAR_N = TR.masterplan ? 0 : 1600;
   const starPos = new Float32Array(STAR_N * 3);
   for (let i = 0; i < STAR_N; i++) {
     const r = 1600 + Math.random() * 1800, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
@@ -403,13 +414,13 @@ function initGame(container, cfg, ui) {
   }
 
   /* ------ tracciato ------ */
-  const SAMPLES = 800;
-  const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, "catmullrom", 0.6);
+  const SAMPLES = TR.masterplan ? 3200 : 800;
+  const curve = new THREE.CatmullRomCurve3(TR.pts.map(p => new THREE.Vector3(p[0], p[1], p[2])), true, TR.masterplan ? "centripetal" : "catmullrom", 0.6);
   const cPts = curve.getSpacedPoints(SAMPLES);
 
   // Trova il tratto più rettilineo: minima variazione di direzione tra tangenti consecutive
   let startT = 0;
-  {
+  if (!TR.city) {
     let minCurv = Infinity;
     const _d1 = new THREE.Vector3(), _d2 = new THREE.Vector3();
     for (let i = 0; i < SAMPLES; i++) {
@@ -421,8 +432,13 @@ function initGame(container, cfg, ui) {
   }
   const len = curve.getLength();
 
+  if (TR.city) buildCanair(scene, curve, startT, TR);
+  const disposeCityEnvironment=TR.masterplan?cityEnvironment(renderer,scene):()=>{};
+  const nearbyBuildings=buildingIndex(scene.userData.buildings||[]);
+  if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=o.castShadow||o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage';}});
+
   /* ------ strada luminosa: nastro largo + piloni verticali ai bordi ------ */
-  {
+  if (!TR.city) {
     const rc = document.createElement("canvas"); rc.width = 64; rc.height = 64;
     const rg = rc.getContext("2d");
     rg.clearRect(0, 0, 64, 64);
@@ -495,7 +511,7 @@ function initGame(container, cfg, ui) {
       new THREE.MeshBasicMaterial({ color: i === 0 ? 0xffffff : 0x35a8ff, transparent: true, opacity: 0.75 })
     );
     m.position.copy(p); m.lookAt(p.clone().add(tan));
-    scene.add(m);
+    if (!TR.city) scene.add(m);
     gates.push({ t, pos: p, mesh: m });
   }
 
@@ -616,6 +632,7 @@ function initGame(container, cfg, ui) {
     isPlayer: true, name: PILOT.name, color: PILOT.color,
     mesh: makeShipVisual(PILOT.color, true, pilotTexMap[PILOT.id]),
     yaw: 0, pitch: 0, yawVel: 0, speed: 0,
+    kick: new THREE.Vector3(), displacement: new THREE.Vector3(), impactRoll: 0, wallHitT: -9,
     boost: 100, heat: 0, hot: false, nitro: 0, alt: false, fireT: 0,
     shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
     kills: 0, lapsDone: 0, t: startT, gateIdx: 1,
@@ -625,9 +642,11 @@ function initGame(container, cfg, ui) {
     const p0 = curve.getPointAt(startT), tan = curve.getTangentAt(startT);
     player.mesh.position.copy(p0);
     player.yaw = Math.atan2(-tan.x, -tan.z);
+    player.mesh.position.y += 5;
+    if (!player.mesh.userData.sprite) player.mesh.lookAt(player.mesh.position.clone().add(tan));
   }
   scene.add(player.mesh);
-  if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1.8);
+  if (!player.mesh.userData.sprite) player.mesh.scale.setScalar(1);
   racers.push(player);
 
   const aiPilots = PILOTS.filter(p => p.id !== PILOT.id);
@@ -637,14 +656,19 @@ function initGame(container, cfg, ui) {
       isPlayer: false, name: a.name, color: a.color,
       mesh: makeShipVisual(a.color, false, pilotTexMap[a.id]),
       t: t0, lat: (i % 2 ? 1 : -1) * (8 + Math.floor(i / 2) * 5),
-      voff: -3 + Math.random() * 6, wf: 0.5 + Math.random(), phase: Math.random() * 6,
+      kick: new THREE.Vector3(), displacement: new THREE.Vector3(), impactRoll: 0, wallHitT: -9, slowdown: 0,
+      voff: TR.city ? 5 : -3 + Math.random() * 6, wf: 0.5 + Math.random(), phase: Math.random() * 6,
       base: DF.aiBase + (Math.random() * 8 - 4), curSpeed: DF.aiBase,
       shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
       kills: 0, lapsDone: 0, fireCd: 1 + Math.random() * 2,
       finished: false, finishTime: 0, respawnT: 0,
     };
     const p = curve.getPointAt(t0);
-    r.mesh.position.copy(p);
+    const tangent = curve.getTangentAt(t0);
+    const side = new THREE.Vector3().crossVectors(tangent, UP).normalize();
+    r.mesh.position.copy(p).addScaledVector(side, r.lat);
+    r.mesh.position.y += r.voff;
+    if (!r.mesh.userData.sprite) r.mesh.lookAt(r.mesh.position.clone().add(tangent));
     scene.add(r.mesh);
     racers.push(r);
   });
@@ -654,7 +678,9 @@ function initGame(container, cfg, ui) {
   let elapsed = 0, shake = 0, timer = TIMED ? 90 : 0, lastDebugT = -99;
   let lockedTarget = null;
   let paused = false, hudAcc = 0, animId = 0;
-  let currentCamDist = -11;
+  const chaseDistance = cfg.cameraDistance || 10;
+  let currentCamDist = -chaseDistance;
+  const pairHitTimes = new Map();
   const elimOrder = [];
   const clock = new THREE.Clock();
 
@@ -672,7 +698,7 @@ function initGame(container, cfg, ui) {
     let t = best / SAMPLES;
     // wrap-around: se eravamo vicini a t=1 e il sample trovato è vicino a t=0
     if (lastT > 0.85 && t < 0.15) t += 1.0;
-    return { t: t > 1 ? t - 1 : t, d: Math.sqrt(bd) };
+    return { t: ((t % 1) + 1) % 1, d: Math.sqrt(bd) };
   }
   let lastMsgT = -9;
   function throttleMsg(m) { if (elapsed - lastMsgT > 0.7) { lastMsgT = elapsed; ui.onMsg(m); } }
@@ -798,24 +824,27 @@ function initGame(container, cfg, ui) {
     /* --- giocatore --- */
     if (player.alive && racing) {
       const ctrl = phase === "race" && !player.finished;
-      const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
-      player.yawVel += ((-st * 1.95) - player.yawVel) * Math.min(1, dt * 8);
+      const st = ctrl ? (keys.gyroActive ? (keys.gyroSteer || 0) : (keys.touchSteer || (keys.right ? 1 : 0) - (keys.left ? 1 : 0))) : 0;
+      player.yawVel = approach(player.yawVel, steeringRate(st, player.speed, !!keys.brake), 12, dt);
       player.yaw += player.yawVel * dt;
 
-      let target = ctrl && keys.brake ? 85 : 145;
+      let target = ctrl && keys.brake ? 60 : 130;
       let boosting = false;
-      if (ctrl && keys.boost && player.boost > 0) {
-        boosting = true; target = 195 + (player.nitro > 0 ? 22 : 0);
+      if (ctrl && !keys.brake && keys.boost && player.boost > 0) {
+        boosting = true; target = 180 + (player.nitro > 0 ? 22 : 0);
         player.boost = Math.max(0, player.boost - 34 * dt);
       } else {
         player.boost = Math.min(100, player.boost + (player.nitro > 0 ? 22 : 11) * dt);
       }
       player.nitro = Math.max(0, player.nitro - dt);
-      player.speed += (target - player.speed) * Math.min(1, dt * (boosting ? 2.6 : 1.6));
+      player.speed = approach(player.speed, target, keys.brake ? 5.5 : boosting ? 2.6 : 1.6, dt);
       player.boosting = boosting;
 
       fwdV.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
       player.mesh.position.addScaledVector(fwdV, player.speed * dt);
+      player.mesh.position.addScaledVector(player.kick, dt);
+      player.kick.multiplyScalar(Math.exp(-2.8 * dt));
+      player.impactRoll *= Math.exp(-5 * dt);
       if (player.mesh.userData.sprite) {
         player.mesh.material.rotation = player.yawVel * 0.45;
       }
@@ -856,7 +885,7 @@ function initGame(container, cfg, ui) {
       player.mesh.position.y += (trackY - player.mesh.position.y) * Math.min(1, dt * 6.5);
 
       // Attrazione laterale verso il centro del tracciato (magnetic road)
-      if (distC > 18 && distC < 45) {
+      if (!TR.city && distC > 18 && distC < 45) {
         const tPt = cPts[Math.floor(newT * SAMPLES)];
         const lf = Math.min(1, dt * 2.8);
         player.mesh.position.x += (tPt.x - player.mesh.position.x) * lf;
@@ -872,10 +901,10 @@ function initGame(container, cfg, ui) {
           player.mesh.position.z + fwdV.z * 14
         );
         player.mesh.lookAt(tmpV);
-        player.mesh.children[0].rotation.z = -player.yawVel * 0.55;
+        player.mesh.children[0].rotation.z = player.yawVel * 0.4 + player.impactRoll;
       }
 
-      if (distC > 95 && phase === "race") {
+      if (!TR.masterplan && distC > 95 && phase === "race") {
         tmpV.copy(cPts[Math.floor(newT * SAMPLES)]).sub(getPos(player)).normalize();
         player.mesh.position.addScaledVector(tmpV, 30 * dt);
         player.speed *= Math.max(0.5, 1 - 0.35 * dt);
@@ -940,6 +969,7 @@ function initGame(container, cfg, ui) {
         const tan = curve.getTangentAt(g.t);
         player.yaw = Math.atan2(-tan.x, -tan.z); player.pitch = 0; player.yawVel = 0;
         player.t = g.t;
+        player.kick.set(0,0,0); player.impactRoll = 0;
       }
     }
 
@@ -949,7 +979,7 @@ function initGame(container, cfg, ui) {
       if (!r.alive) {
         if (RESPAWN && r.respawnT > 0) {
           r.respawnT -= dt;
-          if (r.respawnT <= 0) { r.alive = true; r.mesh.visible = true; r.inv = 2; r.shields = 60; r.hull = 70; }
+          if (r.respawnT <= 0) { r.alive = true; r.mesh.visible = true; r.inv = 2; r.shields = 60; r.hull = 70; r.kick.set(0,0,0); r.displacement.set(0,0,0); r.slowdown = 0; }
         }
         return;
       }
@@ -958,7 +988,15 @@ function initGame(container, cfg, ui) {
       r.mesh.visible = r.inv <= 0 || Math.floor(elapsed * 10) % 2 === 0;
 
       const diff = player.alive ? progressOf(player) - progressOf(r) : 0;
-      const sp = r.curSpeed = r.base + THREE.MathUtils.clamp(diff * 45, -DF.rubber, DF.rubber);
+      r.slowdown = Math.max(0, r.slowdown - dt * 18);
+      const ta=curve.getTangentAt((r.t+0.004)%1),tb=curve.getTangentAt((r.t+0.020)%1);
+      const curvature=Math.acos(THREE.MathUtils.clamp(ta.dot(tb),-1,1))/(len*0.016);
+      const cruise=r.base-12+THREE.MathUtils.clamp(diff*35,-DF.rubber,DF.rubber);
+      const desired=Math.max(55,cornerSpeed(curvature,cruise)-r.slowdown);
+      const sp=r.curSpeed=approach(r.curSpeed,desired,desired<r.curSpeed?5:1.6,dt);
+      r.displacement.addScaledVector(r.kick, dt).multiplyScalar(Math.exp(-1.2 * dt));
+      r.kick.multiplyScalar(Math.exp(-2.8 * dt));
+      r.impactRoll *= Math.exp(-5 * dt);
       const pT = r.t;
       r.t += (sp / len) * dt;
       if (r.t >= 1) { r.t -= 1; r.lapsDone++; }
@@ -967,8 +1005,8 @@ function initGame(container, cfg, ui) {
       const side = tmpV.crossVectors(tan, UP).normalize().clone();
       const vert = new THREE.Vector3().crossVectors(side, tan).normalize();
       const wob = Math.sin(elapsed * r.wf + r.phase) * 3.5;
-      r.mesh.position.copy(p).addScaledVector(side, r.lat + wob).addScaledVector(vert, r.voff + Math.cos(elapsed * r.wf * 0.7 + r.phase) * 2);
-      if (!r.mesh.userData.sprite) r.mesh.lookAt(r.mesh.position.clone().add(tan));
+      r.mesh.position.copy(p).addScaledVector(side, r.lat + wob).addScaledVector(vert, r.voff + Math.cos(elapsed * r.wf * 0.7 + r.phase) * (TR.city ? 0.4 : 2)).add(r.displacement);
+      if (!r.mesh.userData.sprite) { r.mesh.lookAt(r.mesh.position.clone().add(tan)); r.mesh.children[0].rotation.z = r.impactRoll; }
       if (r.mesh.userData.glow) r.mesh.userData.glow.scale.setScalar(3 + sp * 0.03);
 
       if (elapsed - r.lastHitT > 3) r.shields = Math.min(60, r.shields + 5 * dt);
@@ -985,7 +1023,7 @@ function initGame(container, cfg, ui) {
 
       // fuoco IA
       r.fireCd -= dt;
-      if (r.fireCd <= 0 && phase === "race") {
+      if (!TR.practice && r.fireCd <= 0 && phase === "race") {
         const tgt = pickTarget(r);
         if (tgt) {
           const to = getPos(tgt).clone().sub(r.mesh.position);
@@ -1005,6 +1043,75 @@ function initGame(container, cfg, ui) {
         throttleMsg(r.name + " ha tagliato il traguardo");
       }
     });
+
+    // Contact impulses persist through kick/displacement, including AI racers.
+    if (racing) {
+      const bodies = racers.map(r => {
+        const tangent = r.isPlayer ? new THREE.Vector3(-Math.sin(r.yaw),0,-Math.cos(r.yaw)) : curve.getTangentAt(r.t);
+        tangent.y = 0; tangent.normalize();
+        const speed = r.isPlayer ? r.speed : r.curSpeed;
+        return {x:r.mesh.position.x,z:r.mesh.position.z,vx:tangent.x*speed+r.kick.x,vz:tangent.z*speed+r.kick.z};
+      });
+      function applyBody(r,b,old) {
+        const dx=b.x-r.mesh.position.x,dz=b.z-r.mesh.position.z;
+        r.mesh.position.x=b.x;r.mesh.position.z=b.z;
+        if(!r.isPlayer) {r.displacement.x+=dx;r.displacement.z+=dz;}
+        r.kick.x+=b.vx-old.vx;r.kick.z+=b.vz-old.vz;
+      }
+      function feedback(r,speed,nx,nz) {
+        if(speed<8)return;
+        r.impactRoll=THREE.MathUtils.clamp((nx+nz)*speed*0.006,-0.4,0.4);
+        if(!r.isPlayer)r.slowdown=Math.min(55,r.slowdown+speed*0.12);
+        if(r.isPlayer) {
+          shake=Math.min(1.4,shake+speed*0.012);
+          audio.collision(speed);ui.onHit();ui.onExpr("hit");
+        }
+        burst(r.mesh.position,Math.min(18,4+Math.floor(speed/9)),new THREE.Color(0xffc175),25);
+      }
+      for(let i=0;i<racers.length;i++)for(let j=i+1;j<racers.length;j++) {
+        const a=racers[i],b=racers[j];
+        if(!a.alive||!b.alive||a.inv>0||b.inv>0||Math.abs(a.mesh.position.y-b.mesh.position.y)>7)continue;
+        const oldA={...bodies[i]},oldB={...bodies[j]};
+        const hit=resolveContact(bodies[i],bodies[j]);
+        if(!hit)continue;
+        applyBody(a,bodies[i],oldA);applyBody(b,bodies[j],oldB);
+        const key=i+":"+j;
+        if(elapsed-(pairHitTimes.get(key)??-9)>0.3 && hit.speed>8) {
+          pairHitTimes.set(key,elapsed);
+          feedback(a,hit.speed,-hit.nx,-hit.nz);feedback(b,hit.speed,hit.nx,hit.nz);
+          if(hit.speed>35){damage(a,Math.min(9,hit.speed*0.05),b);damage(b,Math.min(9,hit.speed*0.05),a);}
+        }
+      }
+      if(TR.masterplan)racers.forEach((r,i)=>{
+        if(!r.alive||!r.isPlayer)return;
+        const old={...bodies[i]};let strongest=null;
+        for(const box of nearbyBuildings(bodies[i].x,bodies[i].z)){
+          const hit=resolveBuilding(bodies[i],box);if(hit&&(!strongest||hit.speed>strongest.speed))strongest=hit;
+        }
+        if(strongest){applyBody(r,bodies[i],old);if(elapsed-r.wallHitT>.3){r.wallHitT=elapsed;feedback(r,strongest.speed,strongest.nx,strongest.nz);}}
+      });
+      if(TR.city && !TR.masterplan)racers.forEach((r,i)=>{
+        if(!r.alive)return;
+        const {t}=closestT(r.mesh.position,r.t);
+        const center=curve.getPointAt(t),tan=curve.getTangentAt(t);
+        const side=new THREE.Vector3().crossVectors(tan,UP).normalize();
+        const old={...bodies[i]};
+        const hit=resolveBarrier(bodies[i],center,side,(TR.widthAt ? TR.widthAt(t) : TR.halfWidth)-7);
+        if(!hit)return;
+        applyBody(r,bodies[i],old);
+        if(r.isPlayer) {
+          // Deflect heading along the wall so prolonged steering into it does not pin the ship.
+          const facing=new THREE.Vector3(-Math.sin(r.yaw),0,-Math.cos(r.yaw));
+          const tangentYaw=Math.atan2(-tan.x,-tan.z);
+          let angle=tangentYaw-r.yaw;angle=Math.atan2(Math.sin(angle),Math.cos(angle));
+          if(facing.dot(tan)>0)r.yaw+=angle*Math.min(1,dt*5);
+        }
+        if(elapsed-r.wallHitT>0.3&&hit.speed>8) {
+          r.wallHitT=elapsed;feedback(r,hit.speed,hit.nx,hit.nz);
+          if(hit.speed>45)damage(r,Math.min(7,hit.speed*0.04),null);
+        }
+      });
+    }
 
     /* --- laser --- */
     for (let i = lasers.length - 1; i >= 0; i--) {
@@ -1128,27 +1235,30 @@ function initGame(container, cfg, ui) {
     shake = Math.max(0, shake - dt * 2.2);
     const cp2 = Math.cos(player.pitch);
     fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(player.pitch), -Math.cos(player.yaw) * cp2);
-    const camDistTarget = player.boosting ? -6 : -11;
+    const camDistTarget = -chaseDistance - (player.boosting ? 1.5 : 0);
     currentCamDist += (camDistTarget - currentCamDist) * Math.min(1, dt * 3);
     tmpV.copy(getPos(player)).addScaledVector(fwdV, currentCamDist);
-    tmpV.y += 3.5;
-    camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
+    tmpV.y += 3.6;
+    if (phase === "count") camera.position.copy(tmpV);
+    else camera.position.lerp(tmpV, 1 - Math.exp(-9 * dt));
     if (shake > 0) {
       camera.position.x += (Math.random() - 0.5) * shake * 1.6;
       camera.position.y += (Math.random() - 0.5) * shake * 1.6;
     }
-    tmpV.copy(getPos(player)).addScaledVector(fwdV, 8);
+    tmpV.copy(getPos(player)).addScaledVector(fwdV, 24);
+    tmpV.y += 2;
     camera.lookAt(tmpV);
 
     // FOV dinamico: a tutta velocità il campo visivo si allarga (sensazione di velocità)
-    const fovT = THREE.MathUtils.clamp(70 + player.speed * 0.16, 80, 106);
+    const fovT = THREE.MathUtils.clamp(66 + Math.max(130, player.speed) * 0.045, 66, 76);
+    if (phase === "count") { camera.fov = fovT; camera.updateProjectionMatrix(); }
     if (Math.abs(camera.fov - fovT) > 0.05) {
       camera.fov += (fovT - camera.fov) * Math.min(1, dt * 6);
       camera.updateProjectionMatrix();
     }
 
     // star-warp: stelle si avvicinano alla camera quando speed > 130
-    if (player.speed > 130) {
+    if (!TR.city && player.speed > 130) {
       const warpF = 0.4 * (player.speed / 145);
       const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
       for (let i = 0; i < STAR_N; i++) {
@@ -1257,9 +1367,18 @@ function initGame(container, cfg, ui) {
   function loop() {
     animId = requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), 0.05);
-    if (!paused && !ended) update(dt);
+    if (!paused && !ended && !document.hidden && !(navigator.maxTouchPoints > 0 && W() < H())) {
+      const steps=Math.max(1,Math.ceil(dt/(1/120)));
+      for(let i=0;i<steps&&!ended;i++)update(dt/steps);
+    }
     hudAcc += dt;
     if (hudAcc > 0.1) { hudAcc = 0; pushHud(); }
+    if(TR.masterplan){
+      const p=player.mesh.position;
+      sun.target.position.set(Math.round(p.x/4)*4,0,Math.round(p.z/4)*4);
+      sun.position.copy(sun.target.position).add(new THREE.Vector3(180,400,160));
+    }
+    for(const updateCity of scene.userData.cityAnimations||[])updateCity(elapsed);
     renderer.render(scene, camera);
   }
   pushHud();
@@ -1272,10 +1391,12 @@ function initGame(container, cfg, ui) {
     window.removeEventListener("keyup", onKeyUp);
     window.removeEventListener("resize", onResize);
     audio.dispose();
+    const disposed=new Set();const disposeOnce=v=>{if(v&&!disposed.has(v)){disposed.add(v);v.dispose();}};
     scene.traverse(o => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material) { if (Array.isArray(o.material)) o.material.forEach(m => m.dispose()); else o.material.dispose(); }
+      if (o.geometry) disposeOnce(o.geometry);
+      if (o.material) { const mats=Array.isArray(o.material)?o.material:[o.material]; mats.forEach(m=>{for(const key of ["map","normalMap","roughnessMap","bumpMap","emissiveMap"])disposeOnce(m[key]);disposeOnce(m);}); }
     });
+    disposeCityEnvironment();
     renderer.dispose();
     if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);
   };
@@ -1310,12 +1431,37 @@ const CSS = `
 .wr-msg{position:absolute;top:21%;left:0;right:0;text-align:center;font-family:'Orbitron',sans-serif;font-size:clamp(18px,3.4vw,32px);font-weight:800;color:#fff;text-shadow:0 0 22px rgba(79,195,247,.9);animation:wrpop .25s ease-out;}
 @keyframes wrpop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .wr-count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:clamp(80px,18vw,180px);font-weight:900;color:#eaf6ff;text-shadow:0 0 60px rgba(79,195,247,.9);}
+.wr-rotate{display:none;}
+.wr-steer{width:210px;height:88px;display:flex;align-items:center;justify-content:space-around;border:1px solid #7bd7cf;border-radius:44px;background:rgba(5,12,24,.8);touch-action:none;color:#d8f5f1;font-size:15px;}
+.wr-tbtn{touch-action:none;}
+.wr-root select{padding:8px;background:#142638;color:#fff;border:1px solid #50768c;border-radius:6px;}
+@media(orientation:portrait){.wr-rotate{display:flex;position:absolute;inset:0;z-index:100;background:#071323ee;align-items:center;justify-content:center;text-align:center;padding:30px;}}
 .wr-touch{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none;}
 .wr-tbtn{pointer-events:auto;width:62px;height:62px;border-radius:50%;border:1px solid #2f6da8;background:rgba(10,22,40,.6);color:#9fd6ff;font-size:22px;display:flex;align-items:center;justify-content:center;touch-action:none;}
+.wr-tbtn.wr-fire{width:88px;height:88px;flex-direction:column;gap:2px;border:2px solid #ffd7a3;background:rgba(168,48,13,.94);color:#fff;font:bold 14px sans-serif;box-shadow:0 0 18px #ff712866;}
+.wr-fire span:first-child{font-size:30px;}
+.wr-tbtn:active{filter:brightness(1.5);transform:scale(.95);}
+.wr-recenter{padding:12px;border:1px solid #9fd6ff;border-radius:10px;background:#10223de6;color:#fff;font-size:11px;touch-action:manipulation;}
 .wr-tbtn.big{width:78px;height:78px;font-size:14px;font-family:'Orbitron',sans-serif;font-weight:800;}
 .wr-table{border-collapse:collapse;width:min(620px,92vw);background:rgba(8,16,32,.85);border:1px solid #1d3a5c;border-radius:12px;overflow:hidden;}
 .wr-table th{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:.2em;color:#5d93c4;padding:10px 12px;border-bottom:1px solid #1d3a5c;text-align:left;}
 .wr-table td{padding:9px 12px;border-bottom:1px solid #10233c;font-size:15px;}
+.wr-mobile-stats{position:absolute;top:8px;left:12px;right:12px;pointer-events:none;text-shadow:0 1px 4px #000;}
+.wr-mobile-line{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#eaf6ff;}
+.wr-mobile-line small{font-size:9px;}
+.wr-mobile-meters{display:flex;gap:12px;width:min(360px,65%);margin-top:5px;}
+.wr-mobile-meters label{flex:1;min-width:0;font-size:8px;letter-spacing:.08em;color:#c3d8e8;}
+.wr-mobile-meters .wr-bar{height:4px;margin-top:2px;border:0;}
+.wr-mobile .wr-touch{bottom:max(8px,env(safe-area-inset-bottom));padding:0 12px;}
+.wr-mobile .wr-tbtn{width:48px;height:48px;font-size:10px;background:#10243bb3;}
+.wr-mobile .wr-tbtn.big{width:58px;height:58px;font-size:11px;}
+.wr-mobile .wr-tbtn.wr-fire{width:62px;height:62px;font-size:10px;background:#963312d9;box-shadow:none;}
+.wr-mobile .wr-fire span:first-child{font-size:22px;}
+.wr-mobile .wr-recenter{position:fixed;top:70px;left:12px;padding:5px 8px;min-height:32px;font-size:10px;background:#10223d66;}
+.wr-mobile .wr-mir svg{width:24px;height:24px;opacity:.6;}
+.wr-mobile .wr-count{inset:65px 0 auto;font-size:44px;}
+.wr-mobile .wr-msg{top:58px;font-size:13px;}
+.wr-mobile .wr-steer{width:150px;height:42px;font-size:10px;}
 .wr-table tr.me{background:rgba(79,195,247,.12);}
 .wr-hint{font-size:13px;color:#6fa3cf;max-width:640px;text-align:center;line-height:1.5;}
 .wr-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;}
@@ -1430,7 +1576,11 @@ function Bar({ v, max, color, danger }) {
 export default function WisiRacer() {
   const [screen, setScreen] = useState("title");
   const [modeKey, setModeKey] = useState("grand_prix");
-  const [trackKey, setTrackKey] = useState("nebula");
+  const [trackKey, setTrackKey] = useState("masterplan");
+  const [cameraDistance, setCameraDistance] = useState(10);
+  const [renderScale, setRenderScale] = useState(1.25);
+  const [useGyro, setUseGyro] = useState(true);
+  const steeringPointer = useRef(null);
   const [diffKey, setDiffKey] = useState("pilot");
   const [hud, setHud] = useState(null);
   const [msg, setMsg] = useState(null);
@@ -1443,7 +1593,7 @@ export default function WisiRacer() {
   const [vids, setVids] = useState({});
   const mountRef = useRef(null);
   const mapRef = useRef(null);
-  const keysRef = useRef({ left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
+  const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
   const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
@@ -1466,6 +1616,7 @@ export default function WisiRacer() {
   useEffect(() => {
     let dead = false;
     const probeImg = src => new Promise(res => {
+      if (!src) { res(null); return; }
       const im = new Image();
       im.onload = () => res(im); im.onerror = () => res(null);
       im.src = src;
@@ -1536,7 +1687,7 @@ export default function WisiRacer() {
     const cleanup = initGame(mountRef.current, {
       track: trackKey, mode: modeKey, diff: diffKey, keys: keysRef.current,
       assets: { ship: assetsRef.current.ship, bg: assetsRef.current.bgs ? assetsRef.current.bgs[trackKey] : null },
-      pilot: PILOTS[pilotIdx],
+      pilot: PILOTS[pilotIdx], cameraDistance, renderScale,
       mirRef,
     }, ui);
 
@@ -1556,6 +1707,7 @@ export default function WisiRacer() {
     // Touch (mobile): zona destra (x > 40%) = drag mirino
     let aimTouchId = null, aimBase = { x: 0, y: 0, mx: 0, my: 0 };
     const onTouchStart = e => {
+      if (e.target.closest?.(".wr-touch")) return;
       const W = window.innerWidth;
       for (const t of e.changedTouches) {
         if (t.clientX > W * 0.4 && aimTouchId === null) {
@@ -1589,33 +1741,33 @@ export default function WisiRacer() {
       gyro.calibDone = false;
       gyro.calibStart = null;
 
+      let lastAngle = null;
+      let received = false;
       const onOrientation = (e) => {
-        if (e.beta === null) return;
-        const now = performance.now() / 1000;
-        if (gyro.filteredBeta === null) gyro.filteredBeta = e.beta;
-        gyro.filteredBeta = 0.75 * gyro.filteredBeta + 0.25 * e.beta;
-        if (!gyro.calibDone) {
-          if (gyro.calibStart === null) gyro.calibStart = now;
-          gyro.calibSamples.push(gyro.filteredBeta);
-          if (now - gyro.calibStart >= 2) {
-            gyro.betaRef = gyro.calibSamples.reduce((a, b) => a + b, 0) / gyro.calibSamples.length;
-            gyro.calibDone = true;
-          }
+        const angle = window.screen.orientation?.angle ?? window.orientation ?? 90;
+        const value = phoneTilt(e.beta, e.gamma, angle);
+        if (value === null || window.innerHeight > window.innerWidth) return;
+        if (!received) {
+          received = true;
+          keysRef.current.gyroActive = true;
+          setGyroActive(true);
         }
-        const tilt = gyro.calibDone ? (gyro.filteredBeta - gyro.betaRef) : 0;
-        const DEAD = 4, MAX = 26;
-        let steer = 0;
-        if (Math.abs(tilt) > DEAD) {
-          steer = Math.max(-1, Math.min(1, (Math.abs(tilt) - DEAD) / (MAX - DEAD))) * Math.sign(tilt);
+        if (lastAngle !== angle) { gyro.betaRef = null; lastAngle = angle; }
+        if (gyro.betaRef === null) {
+          gyro.betaRef = value;
+          gyro.filteredBeta = 0;
         }
-        keysRef.current.gyroSteer = steer;
+        const target = tiltSteering(value, gyro.betaRef);
+        gyro.filteredBeta += (target - gyro.filteredBeta) * 0.25;
+        keysRef.current.gyroSteer = gyro.filteredBeta;
       };
-
       window.addEventListener("deviceorientation", onOrientation);
-      keysRef.current.gyroActive = true;
-      setGyroActive(true);
+      const sensorTimeout = window.setTimeout(() => {
+        if (!received) setMsg("Movimento non rilevato: usa lo sterzo touch o abilita i sensori nel browser.");
+      }, 3500);
 
       gyroCleanup = () => {
+        window.clearTimeout(sensorTimeout);
         window.removeEventListener("deviceorientation", onOrientation);
         keysRef.current.gyroActive = false;
         keysRef.current.gyroSteer = 0;
@@ -1660,14 +1812,26 @@ export default function WisiRacer() {
   }, [hud, trackMap]);
 
   const touch = (k) => ({
-    onPointerDown: e => { e.preventDefault(); keysRef.current[k] = 1; },
+    onPointerDown: e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); keysRef.current[k] = 1; },
     onPointerUp: () => { keysRef.current[k] = 0; },
-    onPointerLeave: () => { keysRef.current[k] = 0; },
+    onPointerCancel: () => { keysRef.current[k] = 0; },
+    onLostPointerCapture: () => { keysRef.current[k] = 0; },
     onContextMenu: e => e.preventDefault(),
   });
+  const steerAt = e => {
+    const rect=e.currentTarget.getBoundingClientRect();
+    keysRef.current.touchSteer=padSteering(e.clientX,rect.left,rect.width);
+  };
+  const releaseSteering = () => { steeringPointer.current=null;keysRef.current.touchSteer=0; };
+  useEffect(()=>{
+    const clear=()=>{Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
+    window.addEventListener('blur',clear);document.addEventListener('visibilitychange',clear);
+    return ()=>{window.removeEventListener('blur',clear);document.removeEventListener('visibilitychange',clear);};
+  },[]);
 
   const startRace = async () => {
-    if (isTouch && typeof DeviceOrientationEvent !== "undefined") {
+    gyroEnabledRef.current = false;
+    if (useGyro && isTouch && typeof DeviceOrientationEvent !== "undefined") {
       if (typeof DeviceOrientationEvent.requestPermission === "function") {
         try {
           const perm = await DeviceOrientationEvent.requestPermission();
@@ -1679,6 +1843,7 @@ export default function WisiRacer() {
         gyroEnabledRef.current = true;
       }
     }
+    if (TRACKS[trackKey].practice) setModeKey("grand_prix");
     setResults(null);
     const v = vids[trackKey];
     setScreen(v && v.intro ? "intro" : "race");
@@ -1689,6 +1854,7 @@ export default function WisiRacer() {
   return (
     <div className="wr-root">
       <style>{CSS}</style>
+      {screen === "race" && isTouch && <div className="wr-rotate">Ruota il telefono in orizzontale per giocare</div>}
 
       {screen === "title" && (
         <div className="wr-screen">
@@ -1710,7 +1876,7 @@ export default function WisiRacer() {
             <PilotFace size={74} expr="idle" photo={PILOTS[pilotIdx].pilotImg} />
             <div>
               <div className="wr-disp" style={{ fontSize: 22, fontWeight: 800, color: "#eaf6ff" }}>Pilota "{PILOTS[pilotIdx].name}"</div>
-              <div style={{ fontSize: 13, color: "#7fb6e8" }}>{PILOTS[pilotIdx].ship} · Squadrone Aquila</div>
+              <div style={{ fontSize: 13, color: "#7fb6e8" }}>{PILOTS[pilotIdx].ship} · WiSiVerse</div>
             </div>
             <ShipIcon size={104} />
           </div>
@@ -1733,15 +1899,16 @@ export default function WisiRacer() {
               if(dx<-50){setPilotIdx(i=>(i+1)%PILOTS.length);}
               if(dx>50){setPilotIdx(i=>(i-1+PILOTS.length)%PILOTS.length);}
             }}>
-            <img src={PILOTS[pilotIdx].cardImg} alt=""
+            <div style={{position:"absolute",right:60,top:18,opacity:0.45}}><ShipIcon size={190} accent={"#"+PILOTS[pilotIdx].color.toString(16).padStart(6,"0")} /></div>
+            {PILOTS[pilotIdx].cardImg && <img key={PILOTS[pilotIdx].id} src={PILOTS[pilotIdx].cardImg} alt=""
               style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:1}}
-              onError={e=>{e.target.style.display='none';}} />
+              onError={e=>{e.target.style.display='none';}} />}
             <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.05) 50%)',zIndex:2}} />
             <div style={{position:'absolute',bottom:44,left:22,right:22,zIndex:3}}>
               <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
-                <img src={PILOTS[pilotIdx].pilotImg} alt=""
+                {PILOTS[pilotIdx].pilotImg && <img key={PILOTS[pilotIdx].id} src={PILOTS[pilotIdx].pilotImg} alt=""
                   style={{width:52,height:52,borderRadius:8,objectFit:'cover',border:'2px solid rgba(255,255,255,0.3)'}}
-                  onError={e=>{e.target.style.display='none';}} />
+                  onError={e=>{e.target.style.display='none';}} />}
                 <div>
                   <div style={{fontFamily:'Orbitron,sans-serif',fontSize:22,fontWeight:900,color:'#fff'}}>{PILOTS[pilotIdx].name}</div>
                   <div style={{fontSize:13,color:'#9fd6ff'}}>{PILOTS[pilotIdx].ship}</div>
@@ -1770,9 +1937,9 @@ export default function WisiRacer() {
               if (dx > 50)  { const i=(slideIdx-1+trackKeys.length)%trackKeys.length; setSlideIdx(i); setTrackKey(trackKeys[i]); }
             }}>
             <div style={{position:'absolute',inset:0,zIndex:0,background:`linear-gradient(135deg,#${TRACKS[trackKeys[slideIdx]].bg.toString(16).padStart(6,'0')},#${TRACKS[trackKeys[slideIdx]].fog.toString(16).padStart(6,'0')})`}} />
-            <img src={TRACKS[trackKeys[slideIdx]].bgImg} alt=""
+            {TRACKS[trackKeys[slideIdx]].bgImg && <img key={trackKeys[slideIdx]} src={TRACKS[trackKeys[slideIdx]].bgImg} alt=""
               style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:1}}
-              onError={e=>{ e.target.style.display='none'; }} />
+              onError={e=>{ e.target.style.display='none'; }} />}
             <div style={{position:'absolute',inset:0,zIndex:2,background:'linear-gradient(to top,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.1) 55%)'}} />
             <div style={{position:'absolute',bottom:44,left:22,right:22,zIndex:3}}>
               <div style={{fontFamily:'Orbitron,sans-serif',fontSize:24,fontWeight:900,color:'#fff',marginBottom:5,textShadow:'0 2px 12px rgba(0,0,0,0.9)'}}>
@@ -1792,14 +1959,13 @@ export default function WisiRacer() {
               style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',width:42,height:42,borderRadius:'50%',border:'1px solid rgba(255,255,255,0.22)',background:'rgba(0,0,0,0.52)',color:'#fff',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',zIndex:4}}>›</button>
           </div>
 
-          <div className="wr-label wr-disp">Asset grafici</div>
-          <p className="wr-hint" style={{ marginTop: -2 }}>
-            {assets.ship || assets.pilot || assets.bgs[trackKey]
-              ? "📸 Foto trovate in /assets: " + [assets.ship && "navicella", assets.pilot && "pilota", assets.bgs[trackKey] && "sfondo circuito"].filter(Boolean).join(" · ")
-              : "Nessuna foto in /assets — grafica procedurale attiva."}
-            {" "}I file vanno in public/assets/ (ship.png trasparente, pilot.png, bg_nebula.png, bg_ringworld.png, video intro/outro .mp4) e si caricano da soli.
-          </p>
-
+          <div className="wr-label wr-disp">Guida e visuale</div>
+          <div className="wr-row" style={{flexWrap:'wrap',justifyContent:'center',gap:16}}>
+            <label>Telecamera <select value={cameraDistance} onChange={e=>setCameraDistance(Number(e.target.value))}><option value={8}>Molto vicina</option><option value={10}>Vicina</option><option value={13}>Media</option></select></label>
+            <label>Grafica <select value={renderScale} onChange={e=>setRenderScale(Number(e.target.value))}><option value={1}>Leggera</option><option value={1.25}>Bilanciata</option><option value={1.75}>Dettagliata</option></select></label>
+            {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Sterza inclinando il telefono</label>}
+          </div>
+          <p className="wr-hint">Accelerazione automatica · frena prima della curva · boost in uscita. Prova guida: un giro con sparo libero e avversari che non sparano.</p>
           <div className="wr-label wr-disp">Difficoltà</div>
           <div className="wr-row">
             {Object.entries(DIFFS).map(([k, d]) => (
@@ -1831,7 +1997,7 @@ export default function WisiRacer() {
       {screen === "race" && (
         <div style={{ position: "absolute", inset: 0 }}>
           <div ref={mountRef} style={{ position: "absolute", inset: 0 }} />
-          <div className="wr-hud">
+          <div className={"wr-hud" + (isTouch ? " wr-mobile" : "")}>
             {/* Hit flash overlay */}
             <div style={{ position: "absolute", inset: 0, background: "rgba(255,0,0,0.45)", opacity: hitFlash ? 1 : 0, transition: "opacity 0.22s", pointerEvents: "none" }} />
             {/* Vignetta motion blur — intensità con la velocità */}
@@ -1850,11 +2016,6 @@ export default function WisiRacer() {
                 </svg>
               </div>
             </div>
-            {hud && hud.count > 0 && gyroActive && (
-              <div style={{position:'absolute',top:'calc(50% - 80px)',left:0,right:0,textAlign:'center',fontSize:18,color:'#9fd6ff',fontFamily:'Rajdhani,sans-serif',fontWeight:600,textShadow:'0 1px 8px rgba(0,0,0,0.9)',zIndex:10,pointerEvents:'none'}}>
-                📱 Tieni il telefono in posizione di guida
-              </div>
-            )}
             {hud && hud.count > 0 && <div className="wr-count">{hud.count}</div>}
             {msg && <div className="wr-msg">{msg}</div>}
             {hitMsg && <div className="wr-msg" style={{ color: "#ff6644", textShadow: "0 0 18px rgba(255,80,0,.9)", top: "10%", bottom: "auto" }}>{hitMsg}</div>}
@@ -1864,7 +2025,7 @@ export default function WisiRacer() {
               </div>
             )}
 
-            {hud && (
+            {hud && !isTouch && (
               <>
                 <div style={{ position: "absolute", top: 14, left: 14, display: "flex", gap: 10 }}>
                   {hud.racemode ? (
@@ -1885,7 +2046,7 @@ export default function WisiRacer() {
                   <canvas ref={mapRef} width={150} height={120} style={{ display: "block" }} />
                 </div>
 
-                <div style={{ position: "absolute", bottom: 14, left: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
+                <div style={{ position: "absolute", bottom: isTouch ? 124 : 14, left: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
                   {!isTouch && <PilotFace expr={expr} size={66} photo={PILOTS[pilotIdx].pilotImg} />}
                   <div className="wr-chip" style={{ width: 170 }}>
                     <div className="wr-small">Scudi</div>
@@ -1895,7 +2056,7 @@ export default function WisiRacer() {
                   </div>
                 </div>
 
-                <div style={{ position: "absolute", bottom: 14, right: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
+                <div style={{ position: "absolute", bottom: isTouch ? 124 : 14, right: 14, display: "flex", gap: 10, alignItems: "flex-end" }}>
                   <div className="wr-chip" style={{ width: 150 }}>
                     <div className="wr-small">{hud.nitro ? "Boost · NITRO!" : "Boost"}</div>
                     <Bar v={hud.boost} max={100} color="#ffd23d" />
@@ -1910,19 +2071,34 @@ export default function WisiRacer() {
               </>
             )}
 
+            {hud && isTouch && <div className="wr-mobile-stats">
+              <div className="wr-mobile-line">
+                <span>{hud.racemode ? `${hud.pos}/${hud.total} · GIRO ${hud.lap}/${hud.laps}` : `IN VOLO ${hud.alive} · KO ${hud.kills}${hud.timed ? ` · ${hud.timer}s` : ""}`}</span>
+                <span>{hud.speed} <small>VEL</small></span>
+              </div>
+              <div className="wr-mobile-meters">
+                <label>SCUDI<Bar v={hud.shields} max={60} color="#39d2ff" /></label>
+                <label>SCAFO<Bar v={hud.hull} max={100} color="#69f06e" danger /></label>
+                <label>BOOST<Bar v={hud.boost} max={100} color="#ffd23d" /></label>
+                <label style={{color:hud.hot ? '#ff785c' : undefined}}>{hud.hot ? 'CALORE!' : 'ARMA'}<Bar v={hud.heat} max={100} color="#ff785c" /></label>
+              </div>
+            </div>}
             {isTouch && (
               <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
-                  {!gyroActive && (
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <div className="wr-tbtn" {...touch("left")}>◀</div>
-                      <div className="wr-tbtn" {...touch("right")}>▶</div>
-                    </div>
-                  )}
-                  <div className="wr-tbtn big" {...touch("fire")} style={{ borderColor: "#4fc3f7", color: "#eaf6ff", width: 90, height: 90 }}>FUOCO</div>
+                  <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
+                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
+                  {!gyroActive && <div className="wr-steer" role="slider" aria-label="Sterzo" aria-valuemin={-1} aria-valuemax={1}
+                    onPointerDown={e=>{if(steeringPointer.current!==null)return;e.preventDefault();steeringPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);steerAt(e);}}
+                    onPointerMove={e=>{if(e.pointerId===steeringPointer.current)steerAt(e);}}
+                    onPointerUp={releaseSteering} onPointerCancel={releaseSteering} onLostPointerCapture={releaseSteering}>
+                    <span>◀</span><span>STERZO</span><span>▶</span>
+                  </div>}
                 </div>
-                <PilotFace expr={expr} size={80} photo={PILOTS[pilotIdx].pilotImg} />
-                <div className="wr-tbtn big" {...touch("boost")} style={{ pointerEvents: "auto" }}>BOOST</div>
+                <div style={{display:'flex',gap:10,pointerEvents:'auto',alignItems:'end'}}>
+                  <button className="wr-tbtn" {...touch("brake")} aria-label="Freno">FRENO</button>
+                  <button className="wr-tbtn big" {...touch("boost")} aria-label="Boost">BOOST</button>
+                </div>
               </div>
             )}
           </div>
