@@ -239,3 +239,11 @@ Materials are instanced by type. Interior details are visual only; the ship
 collision still covers the building footprint. Side elevations are simpler than
 the main frontage. GPU visual validation remains blocked by Vercel sign-in;
 this work must not be presented as a perfect photoreal reconstruction.
+
+### Red Fox pub direction and canonical neon
+Following chapter 2, the sign is red, with an outlined fox alongside and a tail
+underlining the name. Text glow is a transparent canvas texture; the fox and tail
+are 3D tubes with additive halos and a small local red light. Brick is replaced
+by warm plaster and the shopfront gains raised oxblood timber panels. The earlier
+brick reference link is removed from the close-up viewer because it is obsolete.
+Appearance is still pending a live GPU review; this is not a visual sign-off.

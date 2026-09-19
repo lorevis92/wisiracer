@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import {worldMaterial} from './surfaceMaterials.js';
 export const RED_FOX={x:-1280,z:2470,width:28,depth:18,height:17};
 export function buildRedFox(scene,art){
  const group=new THREE.Group();group.name='Red Fox detailed building';group.position.set(RED_FOX.x,-7,RED_FOX.z);scene.add(group);
- const tex=new THREE.TextureLoader().load('/assets/canair/red-fox-brick.webp');tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;
- const brick=worldMaterial(new THREE.MeshStandardMaterial({map:tex,roughness:.94}),2.4);
+ const plaster=new THREE.MeshStandardMaterial({color:0xc9bca5,roughness:.93});
  const stone=art.stone,red=new THREE.MeshStandardMaterial({color:0x512526,roughness:.65});
  const bronze=new THREE.MeshStandardMaterial({color:0x9c8256,metalness:.7,roughness:.3});
  const dark=new THREE.MeshStandardMaterial({color:0x202a2c,roughness:.7});
@@ -19,10 +17,10 @@ export function buildRedFox(scene,art){
  box(stone,0,.15,19.2,38,.3,.4);
  box(dark,0,-.03,19.8,4,.04,.5);for(let x=-1.9;x<2;x+=.2)box(bronze,x,0,19.8,.07,.04,.45);
  // Shell: solid rear/side walls, actual openings on the principal facade.
- box(brick,0,8,-8.6,28,16,.8);for(const side of [-1,1])box(brick,side*13.6,8,0,.8,16,18);
+ box(plaster,0,8,-8.6,28,16,.8);for(const side of [-1,1])box(plaster,side*13.6,8,0,.8,16,18);
  box(wood,0,.12,0,27,.24,17);box(dark,0,16,0,28,.4,18);
- for(const [y,h]of [[6.5,1],[11.25,1.5],[15.7,1.4]])box(brick,0,y,8.6,28,h,.8);
- for(let i=0;i<=6;i++)box(brick,-14+i*28/6,11,8.6,i===0||i===6?.8:1.55,10,.8);
+ for(const [y,h]of [[6.5,1],[11.25,1.5],[15.7,1.4]])box(plaster,0,y,8.6,28,h,.8);
+ for(let i=0;i<=6;i++)box(plaster,-14+i*28/6,11,8.6,i===0||i===6?.8:1.55,10,.8);
  for(const y of [8.9,13.5])for(let i=0;i<6;i++){
   const x=-14+(i+.5)*28/6;
   // Glazing is recessed behind jambs; dark backing gives the room depth.
@@ -48,18 +46,37 @@ export function buildRedFox(scene,art){
  for(const y of [2.8,3.6,4.4]){box(wood,0,y,-7.9,23,.12,.8);for(let i=0;i<24;i++)box(i%3===0?bronze:dark,-11+i*.95,y+.27,-7.8,.17,.45,.17);}
  for(const x of [-9,-5,5,9]){box(wood,x,1.3,3,2.2,.15,2.2);for(const dx of [-1.5,1.5])box(red,x+dx,.7,3,.9,1.4,1);box(warm,x,4,0,.6,.4,.6);box(bronze,x,4.6,0,.06,.8,.06);}
  for(const x of [-12.8,12.8]){box(bronze,x,3.8,9.6,.12,.8,.8);box(warm,x,3.5,10,.32,.65,.3);box(dark,x,3.9,10,.5,.15,.5);}
- // Cornice brackets and facade panels echo the approved visual reference.
+ // Painted timber pilasters and recessed panels give the pub a crafted frontage.
+ for(const x of [-13.5,-8,-2.2,2.2,8,13.5]){
+  box(red,x,2.7,9.3,.8,5.4,.24);
+  for(const y of [1.4,3.8]){box(wood,x,y,9.44,.5,1.65,.06);box(red,x,y,9.49,.4,1.5,.06);}
+ }
+ // Cornice brackets and facade panels echo the pub's joinery.
  for(let x=-13;x<=13;x+=1.6)box(stone,x,16.1,9.3,.28,.55,.75);
  for(const x of [-13.5,-8,-2.2,2.2,8,13.5]){
   for(const dx of [-.16,.16])box(bronze,x+dx,2.65,9.29,.035,4.5,.04);
  }
  // Raised parapet and roof services.
- for(const z of [-8.8,8.8])box(brick,0,17,z,28,.7,.35);
- for(const x of [-13.8,13.8])box(brick,x,17,0,.35,.7,18);
+ for(const z of [-8.8,8.8])box(plaster,0,17,z,28,.7,.35);
+ for(const x of [-13.8,13.8])box(plaster,x,17,0,.35,.7,18);
  box(dark,7,16.6,-4,3,.9,2);for(let i=0;i<8;i++)box(bronze,5.7+i*.36,17.08,-4,.1,.04,1.8);
- const c=document.createElement('canvas');c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#512526';ctx.fillRect(0,0,1024,128);ctx.fillStyle='#d3b57a';ctx.font='600 78px Georgia';ctx.textAlign='center';ctx.fillText('THE RED FOX',512,91);
+ // Chapter 2: red name, fox alongside, its tail underlining the lettering.
+ const c=document.createElement('canvas');c.width=1536;c.height=256;const ctx=c.getContext('2d');
+ ctx.clearRect(0,0,1536,256);ctx.textAlign='center';ctx.font='600 150px Georgia';ctx.textBaseline='middle';
+ ctx.shadowColor='#ff201a';ctx.shadowBlur=24;ctx.strokeStyle='#ff271d';ctx.lineWidth=3;ctx.strokeText('The Red Fox',768,128);
+ ctx.shadowBlur=9;ctx.strokeStyle='#ffb19c';ctx.lineWidth=1.3;ctx.strokeText('The Red Fox',768,128);
  const signTex=new THREE.CanvasTexture(c);signTex.colorSpace=THREE.SRGBColorSpace;
- const sign=new THREE.Mesh(new THREE.PlaneGeometry(15,.95),new THREE.MeshStandardMaterial({map:signTex,roughness:.55}));sign.position.set(0,5.27,9.52);group.add(sign);
+ box(dark,0,6,9.35,24,2.1,.22);
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(18,3),new THREE.MeshBasicMaterial({map:signTex,transparent:true,depthWrite:false,toneMapped:false}));sign.position.set(-1.1,6.05,9.52);group.add(sign);
+ const neon=new THREE.MeshBasicMaterial({color:0xff3424,toneMapped:false});
+ const halo=new THREE.MeshBasicMaterial({color:0xff2519,transparent:true,opacity:.12,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false});
+ function tube(points,closed=false){const curve=new THREE.CatmullRomCurve3(points.map(([x,y])=>new THREE.Vector3(x,y,9.6)),closed,'centripetal');
+  for(const [radius,mat]of [[.025,neon],[.095,halo]]){const line=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(32,points.length*6),radius,5,closed),mat);group.add(line);}
+ }
+ // Pointed ears, muzzle and seated body; one continuous tail sweeps under the name.
+ tube([[9,6.35],[8.7,6.75],[8.75,7.1],[9.1,6.88],[9.45,7.05],[9.63,6.7],[10.05,6.48],[9.6,6.3],[9.48,5.95],[9.8,5.55],[9.2,5.35],[8.6,5.45],[8.42,5.95],[8.7,6.28]],true);
+ tube([[9.4,5.4],[10.1,5.2],[10.4,4.95],[9.5,4.9],[6,4.92],[2,4.93],[-2,4.93],[-6,4.94],[-10,5.03],[-11.2,5.18]]);
+ const spill=new THREE.PointLight(0xff3825,12,9,2);spill.position.set(0,6,10.2);group.add(spill);
  for(const [material,items]of batches){const mesh=new THREE.InstancedMesh(cube,material,items.length);mesh.name='Red Fox architecture';items.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,0,0);dummy.scale.set(v.w,v.h,v.d);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=material!==glass;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
  scene.userData.buildings ||= [];scene.userData.buildings.push({x:RED_FOX.x,z:RED_FOX.z,hx:14,hz:9});
  return group;
