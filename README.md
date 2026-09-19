@@ -295,3 +295,15 @@ the older avenue; both footprints clear grid streets and the race corridor.
 The architecture viewer includes both shared models and their Higgsfield photos.
 Room descriptions follow chapter 2 and the upscale bar setting follows chapter 5;
 exterior styling is an interpretation. GPU/phone review remains outstanding.
+
+### Glass office street segment
+The first eligible bronze/glass route office now uses glassStreet.js, also the
+default option in /architecture.html. Glazing is separate from visible floors
+and desks. Four trees use branches and individual instanced leaves; eight simple
+articulated pedestrians walk bounded sidewalk lanes. Paving and seats layer the
+foreground. The review adds background towers; the race uses its existing city.
+A 128px local cube capture is filtered once when the camera approaches, after
+three seconds, and assigned only to this building's glass. Failure retains the
+sky environment. Reflections are static and approximate, not ray traced.
+Dedicated capture textures are disposed on scene exit. Pedestrian path bounds
+and geometry are tested; visual quality and phone performance remain unverified.

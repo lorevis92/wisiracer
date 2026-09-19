@@ -63,3 +63,17 @@ Chapter 2 supplies the modest lodging and room contents; chapter 5 supplies
 Lube Tone's upscale music setting. Facade styling is proposed game art direction.
 Interiors are visual scenery; pedestrians, entering rooms, music and service
 interactions are not implemented by this pass.
+
+## Complete glass street segment
+- [x] Shared city/review scene replaces one route office
+- [x] Separate glass skin, floors, desks and lighting fixtures
+- [x] One-time 128px local reflection probe, with sky fallback
+- [x] Four branched trees with individual leaf geometry
+- [x] Paved foreground, seats and eight walking pedestrians
+- [x] Review skyline; existing metropolis supplies the game backdrop
+- [x] Animation path/geometry regression test
+- [ ] Actual GPU/reflection/transparency review and S24 Ultra profiling
+
+The pedestrians are simple articulated figures, not realistic human assets.
+Foliage is modeled leaf geometry, not a photoreal scanned tree. This segment
+uses the existing office Higgsfield reference; no new reference image was needed.

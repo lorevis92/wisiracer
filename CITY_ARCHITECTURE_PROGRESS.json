@@ -1,8 +1,8 @@
 {
   "routeBuildings": 98,
   "secondaryLots": 1118,
-  "batchesIncludingRedFox": 550,
-  "instancesIncludingRedFox": 151020,
+  "batchesIncludingRedFox": 556,
+  "instancesIncludingRedFox": 153342,
   "gpuVerified": false,
   "buildings": [
     {
@@ -51,7 +51,7 @@
       "id": "route-97",
       "x": 3512.9587117036363,
       "z": 2251.8960605483353,
-      "type": "uffici bronzo e vetro",
+      "type": "uffici vetro — tratto completo",
       "reference": 1
     },
     {

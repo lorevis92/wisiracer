@@ -1,3 +1,4 @@
+import {buildGlassStreet} from './glassStreet.js';
 import {AUTHORED_LANDMARKS,buildAuthoredLandmark} from './cityLandmarks.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -11,9 +12,11 @@ const art=cityMaterials(),materials=architectureMaterials(art),cube=new THREE.Bo
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),art.asphalt);ground.rotation.x=-Math.PI/2;ground.position.y=-.2;ground.receiveShadow=true;scene.add(ground);
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,600);camera.position.set(-90,45,85);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,22,0);controls.minDistance=8;controls.maxDistance=220;controls.maxPolarAngle=Math.PI*.49;controls.enableDamping=true;
-let building;
+let building,street,streetStart=0;
 function show(id){
- if(building){scene.remove(building);const disposed=new Set();const free=o=>{if(o&&!disposed.has(o)){disposed.add(o);o.dispose();}};building.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(building.userData.authoredLandmark&&o.isMesh){free(o.geometry);if(o.material!==art.stone){free(o.material.map);free(o.material);}}});}
+ if(street){street.dispose();street=undefined;}
+ if(building){scene.remove(building);const disposed=new Set();const free=o=>{if(o&&!disposed.has(o)){disposed.add(o);o.dispose();}};building.traverse(o=>{if(o.isInstancedMesh)o.dispose();if((building.userData.authoredLandmark||building.userData.glassStreet)&&o.isMesh){free(o.geometry);if(o.material!==art.stone){free(o.material.map);free(o.material);}}});}
+ if(id===8){street=buildGlassStreet(scene,art,{backdrop:true});building=street.root;building.userData.glassStreet=true;streetStart=performance.now();camera.position.set(-90,18,80);controls.target.set(-8,18,0);controls.update();document.getElementById('reference').src='/assets/canair/references/type-1.webp';return;}
  if(id>=6){building=buildAuthoredLandmark(scene,id-6,art,{placeInCity:false});document.getElementById('reference').src='/assets/canair/references/'+AUTHORED_LANDMARKS[id-6].reference+'.webp';return;}
  building=new THREE.Group();scene.add(building);const batches=new Map();
  buildStreetArchitecture({id,depth:38,w:56,h:[43,75,43,34,51,29][id],sign:1,yaw:0,materials,
@@ -21,5 +24,5 @@ function show(id){
  for(const [mat,items]of batches){const mesh=new THREE.InstancedMesh(cube,mat,items.length);items.forEach((v,i)=>{dummy.position.copy(v.p);dummy.scale.set(...v.size);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();building.add(mesh);}
  document.getElementById('reference').src='/assets/canair/references/type-'+id+'.webp';
 }
-const select=document.getElementById('building');[...ARCHETYPES,...AUTHORED_LANDMARKS.map(a=>a.name)].forEach((label,id)=>{const o=document.createElement('option');o.value=id;o.textContent=label;select.appendChild(o);});select.addEventListener('change',()=>show(Number(select.value)));show(0);
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera);});
+const select=document.getElementById('building');[...ARCHETYPES,...AUTHORED_LANDMARKS.map(a=>a.name),"Palazzo di vetro · tratto completo"].forEach((label,id)=>{const o=document.createElement('option');o.value=id;o.textContent=label;select.appendChild(o);});select.addEventListener('change',()=>show(Number(select.value)));select.value="8";show(8);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});renderer.setAnimationLoop(()=>{controls.update();if(street){const time=(performance.now()-streetStart)/1000;street.update(time);if(time>3&&!street.captured){street.capture(renderer);street.captured=true;}}renderer.render(scene,camera);});

@@ -1,3 +1,4 @@
+import {buildGlassStreet} from './glassStreet.js';
 import * as THREE from 'three';
 import {buildRedFox} from './redFox.js';
 import {architectureMaterials,buildStreetArchitecture} from './cityArchitecture.js';
@@ -24,6 +25,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
  scene.userData.architectureRegistry=[];
  const samples=curve.getSpacedPoints(900),length=curve.getLength();
  let seed=741;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ let hasGlassStreet=false;
  const n=Math.floor(length/95);
  for(let i=0;i<n;i++)for(const sign of [-1,1]){
   const t=i/n,p=curve.getPointAt(t),tan=curve.getTangentAt(t),side=new THREE.Vector3(tan.z,0,-tan.x).normalize(),yaw=Math.atan2(tan.x,tan.z);
@@ -37,7 +39,14 @@ export function buildCityArt(scene,curve,widthAt,mat){
   scene.userData.buildings.push({x:center.x,z:center.z,hx:depth/2,hz:w/2,yaw});
   const place=(out,along,y)=>center.clone().addScaledVector(side,out).addScaledVector(tan,along).setY(y-7);
   const id=i*2+(sign===1?1:0);
-  const design=buildStreetArchitecture({add,place,yaw,depth,w,h,sign,id,materials:architecture});
+  let design;
+  if(!hasGlassStreet&&id%6===1){
+   hasGlassStreet=true;
+   const segment=buildGlassStreet(scene,mat,{depth,width:w,height:h,x:center.x,z:center.z,y:-7,yaw:yaw+(sign===-1?Math.PI:0)});
+   scene.userData.glassStreets ||= [];scene.userData.glassStreets.push(segment);
+   scene.userData.cityAnimations ||= [];scene.userData.cityAnimations.push(segment.update);
+   design={type:'uffici vetro — tratto completo',reference:1};
+  }else design=buildStreetArchitecture({add,place,yaw,depth,w,h,sign,id,materials:architecture});
   scene.userData.architectureRegistry.push({id:'route-'+id,x:center.x,z:center.z,...design});
   // Street furniture remains outside the carriageway.
   if(i%3===0){

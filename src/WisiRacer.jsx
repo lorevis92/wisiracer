@@ -1379,6 +1379,9 @@ function initGame(container, cfg, ui) {
       sun.position.copy(sun.target.position).add(new THREE.Vector3(180,400,160));
     }
     for(const updateCity of scene.userData.cityAnimations||[])updateCity(elapsed);
+    for(const segment of scene.userData.glassStreets||[]){
+      if(!segment.captured&&elapsed>3&&camera.position.distanceTo(segment.center())<400){segment.capture(renderer);segment.captured=true;}
+    }
     renderer.render(scene, camera);
   }
   pushHud();
@@ -1396,6 +1399,7 @@ function initGame(container, cfg, ui) {
       if (o.geometry) disposeOnce(o.geometry);
       if (o.material) { const mats=Array.isArray(o.material)?o.material:[o.material]; mats.forEach(m=>{for(const key of ["map","normalMap","roughnessMap","bumpMap","emissiveMap"])disposeOnce(m[key]);disposeOnce(m);}); }
     });
+    for(const segment of scene.userData.glassStreets||[])segment.dispose();
     disposeCityEnvironment();
     renderer.dispose();
     if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);
