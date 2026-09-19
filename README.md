@@ -189,3 +189,14 @@ player over a 440-unit area. Canair free driving no longer triggers the off-rout
 warning, speed penalty or pull toward the race line. Shader appearance and the
 shadow frame-time cost still need live WebGL / phone verification; passing the
 build and unit tests does not establish visual quality.
+
+### Central garden and water horizon
+Higgsfield GPT Image 2.5 generated grass
+`29631677-218b-4363-bc59-f3a738da2fa8` and bark
+`06f422d5-063d-4cf1-a28b-bfd301083000`; bundled as 512px WebP.
+A central garden between grid streets adds planted beds, paths, benches,
+clustered tree crowns and a small bronze ring sculpture. Geometry is authored
+in Three.js; the generated images are materials, not generated 3D models.
+A water plane surrounds the existing city platform. Shoreline geometry remains
+rectangular and is not a finished natural coast. Visual GPU inspection and
+physical-device performance remain unverified.
