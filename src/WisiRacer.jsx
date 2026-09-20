@@ -4,7 +4,7 @@ import * as THREE from "three";
 import {cityEnvironment} from "./cityEnvironment.js";
 import { MASTERPLAN, utgenraHeight } from "./masterplan.js";
 import { CANAIR, PRACTICE, buildCanair } from "./canair.js";
-import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, phonePitch, flightDirection, tiltSteering } from "./driving.js";
+import { steeringRate, approach, padSteering, cornerSpeed, phoneTilt, flightDirection, altitudeMotion, tiltSteering } from "./driving.js";
 import {buildingIndex,resolveBuilding} from "./cityCollisions.js";
 import { resolveContact, resolveBarrier } from "./collisions.js";
 
@@ -632,7 +632,7 @@ function initGame(container, cfg, ui) {
   const player = {
     isPlayer: true, name: PILOT.name, color: PILOT.color,
     mesh: makeShipVisual(PILOT.color, true, pilotTexMap[PILOT.id]),
-    yaw: 0, pitch: 0, yawVel: 0, speed: 0,
+    yaw: 0, pitch: 0, verticalSpeed:0, yawVel: 0, speed: 0,
     kick: new THREE.Vector3(), displacement: new THREE.Vector3(), impactRoll: 0, wallHitT: -9,
     boost: 100, heat: 0, hot: false, nitro: 0, alt: false, fireT: 0,
     shields: 60, hull: 100, alive: true, inv: 0, lastHitT: -9,
@@ -844,9 +844,12 @@ function initGame(container, cfg, ui) {
       player.boosting = boosting;
 
       player.previousY=player.mesh.position.y;
-      const vertical=ctrl&&TR.masterplan?(keys.gyroActive?(keys.gyroPitch||0):(keys.touchPitch||((keys.up?1:0)-(keys.down?1:0)))):0;
-      player.pitch=approach(player.pitch,vertical*.65,4,dt);
-      const direction=flightDirection(player.yaw,player.pitch);
+      const vertical=ctrl&&TR.masterplan?((keys.up?1:0)-(keys.down?1:0)):0;
+      const lift=altitudeMotion(player.verticalSpeed,vertical,dt);
+      player.verticalSpeed=lift.velocity;
+      if(TR.masterplan)player.mesh.position.y+=lift.delta;
+      player.pitch=approach(player.pitch,Math.atan2(player.verticalSpeed,Math.max(player.speed,60)),5,dt);
+      const direction=flightDirection(player.yaw,0);
       fwdV.set(direction.x,direction.y,direction.z);
       player.mesh.position.addScaledVector(fwdV, player.speed * dt);
       player.mesh.position.addScaledVector(player.kick, dt);
@@ -892,8 +895,8 @@ function initGame(container, cfg, ui) {
       if(TR.masterplan){
         const minY=utgenraHeight(player.mesh.position.x/4,-player.mesh.position.z/4)-3;
         player.mesh.position.y=THREE.MathUtils.clamp(player.mesh.position.y,minY,650);
-        if(player.mesh.position.y<=minY&&player.pitch<0)player.pitch=0;
-        if(player.mesh.position.y>=650&&player.pitch>0)player.pitch=0;
+        if(player.mesh.position.y<=minY&&player.verticalSpeed<0){player.pitch=0;player.verticalSpeed=0;}
+        if(player.mesh.position.y>=650&&player.verticalSpeed>0){player.pitch=0;player.verticalSpeed=0;}
       }else player.mesh.position.y += (trackY - player.mesh.position.y) * Math.min(1, dt * 6.5);
 
       // Attrazione laterale verso il centro del tracciato (magnetic road)
@@ -909,7 +912,7 @@ function initGame(container, cfg, ui) {
         const lookIdx = (Math.floor(newT * SAMPLES) + 6) % SAMPLES;
         tmpV.set(
           player.mesh.position.x + fwdV.x * 14,
-          TR.masterplan?player.mesh.position.y+fwdV.y*14:cPts[lookIdx].y + 5,
+          TR.masterplan?player.mesh.position.y+Math.sin(player.pitch)*14:cPts[lookIdx].y + 5,
           player.mesh.position.z + fwdV.z * 14
         );
         player.mesh.lookAt(tmpV);
@@ -1067,7 +1070,7 @@ function initGame(container, cfg, ui) {
       function applyBody(r,b,old) {
         const dx=b.x-r.mesh.position.x,dz=b.z-r.mesh.position.z;
         r.mesh.position.x=b.x;r.mesh.position.z=b.z;
-        if(r.isPlayer&&Number.isFinite(b.y)){r.mesh.position.y=b.y;if(b.roofContact)r.pitch=Math.max(0,r.pitch);}
+        if(r.isPlayer&&Number.isFinite(b.y)){r.mesh.position.y=b.y;if(b.roofContact){r.pitch=Math.max(0,r.pitch);r.verticalSpeed=Math.max(0,r.verticalSpeed);}}
         if(!r.isPlayer) {r.displacement.x+=dx;r.displacement.z+=dz;}
         r.kick.x+=b.vx-old.vx;r.kick.z+=b.vz-old.vz;
       }
@@ -1246,8 +1249,9 @@ function initGame(container, cfg, ui) {
 
     /* --- camera --- */
     shake = Math.max(0, shake - dt * 2.2);
-    const cp2 = Math.cos(player.pitch);
-    fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(player.pitch), -Math.cos(player.yaw) * cp2);
+    const cameraPitch=TR.masterplan?player.pitch*.18:player.pitch;
+    const cp2 = Math.cos(cameraPitch);
+    fwdV.set(-Math.sin(player.yaw) * cp2, Math.sin(cameraPitch), -Math.cos(player.yaw) * cp2);
     const camDistTarget = -chaseDistance - (player.boosting ? 1.5 : 0);
     currentCamDist += (camDistTarget - currentCamDist) * Math.min(1, dt * 3);
     tmpV.copy(getPos(player)).addScaledVector(fwdV, currentCamDist);
@@ -1452,6 +1456,8 @@ const CSS = `
 .wr-rotate{display:none;}
 .wr-steer{width:210px;height:88px;display:flex;align-items:center;justify-content:space-around;border:1px solid #7bd7cf;border-radius:44px;background:rgba(5,12,24,.8);touch-action:none;color:#d8f5f1;font-size:15px;}
 .wr-tbtn{touch-action:none;}
+.wr-altitude{display:flex;flex-direction:column;gap:6px;}
+.wr-altitude .wr-tbtn.wr-altitude-btn{width:72px;height:44px;border-radius:12px;font:bold 11px sans-serif;color:#effbff;background:#173e54dc;border-color:#6c9eb3;}
 .wr-root select{padding:8px;background:#142638;color:#fff;border:1px solid #50768c;border-radius:6px;}
 @media(orientation:portrait){.wr-rotate{display:flex;position:absolute;inset:0;z-index:100;background:#071323ee;align-items:center;justify-content:center;text-align:center;padding:30px;}}
 .wr-touch{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;pointer-events:none;}
@@ -1599,7 +1605,6 @@ export default function WisiRacer() {
   const [renderScale, setRenderScale] = useState(1.25);
   const [useGyro, setUseGyro] = useState(true);
   const [invertSteering,setInvertSteering]=useState(false);
-  const [invertPitch,setInvertPitch]=useState(false);
   const steeringPointer = useRef(null);
   const [diffKey, setDiffKey] = useState("pilot");
   const [hud, setHud] = useState(null);
@@ -1614,7 +1619,7 @@ export default function WisiRacer() {
   const mountRef = useRef(null);
   const mapRef = useRef(null);
   const actionOwners = useRef({});
-  const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroPitch:0, touchPitch:0, gyroActive: false });
+  const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
   const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
@@ -1767,9 +1772,8 @@ export default function WisiRacer() {
       const onOrientation = (e) => {
         const angle = window.screen.orientation?.angle ?? window.orientation ?? 90;
         const value = phoneTilt(e.beta, e.gamma, angle);
-        const pitchValue=phonePitch(e.beta,e.gamma,angle);
         if (value === null || window.innerHeight > window.innerWidth) {
-          keysRef.current.gyroSteer=0;keysRef.current.gyroPitch=0;gyro.filteredPitch=0;gyro.filteredBeta=0;gyro.betaRef=null;return;
+          keysRef.current.gyroSteer=0;gyro.filteredBeta=0;gyro.betaRef=null;return;
         }
         if (!received) {
           received = true;
@@ -1778,14 +1782,12 @@ export default function WisiRacer() {
         }
         if (lastAngle !== angle) { gyro.betaRef = null; lastAngle = angle; }
         if (gyro.betaRef === null) {
-          gyro.betaRef = value;gyro.pitchRef=pitchValue;gyro.filteredPitch=0;
+          gyro.betaRef = value;
           gyro.filteredBeta = 0;
         }
         const target = tiltSteering(value, gyro.betaRef)*(invertSteering?-1:1);
         gyro.filteredBeta += (target - gyro.filteredBeta) * 0.25;
         keysRef.current.gyroSteer = gyro.filteredBeta;
-        gyro.filteredPitch+=(tiltSteering(pitchValue,gyro.pitchRef)*(invertPitch?-1:1)-gyro.filteredPitch)*.25;
-        keysRef.current.gyroPitch=gyro.filteredPitch;
       };
       window.addEventListener("deviceorientation", onOrientation);
       const sensorTimeout = window.setTimeout(() => {
@@ -1841,9 +1843,8 @@ export default function WisiRacer() {
   const steerAt = e => {
     const rect=e.currentTarget.getBoundingClientRect();
     keysRef.current.touchSteer=padSteering(e.clientX,rect.left,rect.width);
-    keysRef.current.touchPitch=-padSteering(e.clientY,rect.top,rect.height);
   };
-  const releaseSteering = () => { steeringPointer.current=null;keysRef.current.touchSteer=0;keysRef.current.touchPitch=0; };
+  const releaseSteering = () => { steeringPointer.current=null;keysRef.current.touchSteer=0; };
   useEffect(()=>{
     const clear=()=>{for(const key of Object.keys(actionOwners.current))delete actionOwners.current[key];gyroRef.current.betaRef=null;Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
     window.addEventListener('blur',clear);document.addEventListener('visibilitychange',clear);
@@ -1985,8 +1986,7 @@ export default function WisiRacer() {
             <label>Telecamera <select value={cameraDistance} onChange={e=>setCameraDistance(Number(e.target.value))}><option value={8}>Molto vicina</option><option value={10}>Vicina</option><option value={13}>Media</option></select></label>
             <label>Grafica <select value={renderScale} onChange={e=>setRenderScale(Number(e.target.value))}><option value={1}>Leggera</option><option value={1.25}>Bilanciata</option><option value={1.75}>Dettagliata</option></select></label>
             {isTouch && <label><input type="checkbox" checked={invertSteering} onChange={e=>setInvertSteering(e.target.checked)} /> Inverti destra/sinistra</label>}
-            {isTouch && <label><input type="checkbox" checked={invertPitch} onChange={e=>setInvertPitch(e.target.checked)} /> Inverti salita/discesa</label>}
-            {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Vola inclinando il telefono</label>}
+            {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Sterza inclinando il telefono · quota con SALI / SCENDI</label>}
           </div>
           <p className="wr-hint">Accelerazione automatica · frena prima della curva · boost in uscita. Prova guida: un giro con sparo libero e avversari che non sparano.</p>
           <div className="wr-label wr-disp">Difficoltà</div>
@@ -2110,15 +2110,19 @@ export default function WisiRacer() {
               <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
                   <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
-                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;keysRef.current.gyroPitch=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
+                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
                   {!gyroActive && <div className="wr-steer" role="slider" aria-label="Sterzo" aria-valuemin={-1} aria-valuemax={1}
                     onPointerDown={e=>{if(steeringPointer.current!==null)return;e.preventDefault();steeringPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);steerAt(e);}}
                     onPointerMove={e=>{if(e.pointerId===steeringPointer.current)steerAt(e);}}
                     onPointerUp={releaseSteering} onPointerCancel={releaseSteering} onLostPointerCapture={releaseSteering}>
-                    <span>◀</span><span>↑ VOLO ↓</span><span>▶</span>
+                    <span>◀</span><span>STERZO</span><span>▶</span>
                   </div>}
                 </div>
                 <div style={{display:'flex',gap:10,pointerEvents:'auto',alignItems:'end'}}>
+                  {TRACKS[trackKey].masterplan&&<div className="wr-altitude" aria-label="Controllo quota">
+                    <button className="wr-tbtn wr-altitude-btn" {...touch("up")} aria-label="Sali">↑ SALI</button>
+                    <button className="wr-tbtn wr-altitude-btn" {...touch("down")} aria-label="Scendi">↓ SCENDI</button>
+                  </div>}
                   <button className="wr-tbtn" {...touch("brake")} aria-label="Freno">FRENO</button>
                   <button className="wr-tbtn big" {...touch("boost")} aria-label="Boost">BOOST</button>
                 </div>

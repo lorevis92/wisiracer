@@ -35,3 +35,10 @@ export function phonePitch(beta,gamma,angle){
 export function flightDirection(yaw,pitch){
  const c=Math.cos(pitch);return {x:-Math.sin(yaw)*c,y:Math.sin(pitch),z:-Math.cos(yaw)*c};
 }
+
+// Vertical thrusters are independent of forward speed and boost.
+export function altitudeMotion(velocity,input,dt){
+ const target=clamp(input,-1,1)*22,rate=input===0?12:5;
+ const decay=Math.exp(-rate*dt);
+ return {velocity:target+(velocity-target)*decay,delta:target*dt+(velocity-target)*(1-decay)/rate};
+}

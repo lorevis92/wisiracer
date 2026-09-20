@@ -55,3 +55,11 @@ test('landscape pitch keeps the same climb command when device is rotated',()=>{
  assert.ok(Math.abs(Math.hypot(climb.x,climb.y,climb.z)-1)<1e-12);
  assert.equal(climb.x,dive.x);assert.equal(climb.z,dive.z);
 });
+
+import {altitudeMotion} from '../src/driving.js';
+test('altitude buttons give frame-rate independent rise and gentle level-off',()=>{
+ const runs=[30,60,120].map(fps=>{let v=0,y=0;for(let i=0;i<fps;i++){const n=altitudeMotion(v,1,1/fps);v=n.velocity;y+=n.delta;}const releaseY=y;for(let i=0;i<fps;i++){const n=altitudeMotion(v,0,1/fps);v=n.velocity;y+=n.delta;}return {v,y,drift:y-releaseY};});
+ for(const r of runs){assert.ok(Math.abs(r.v)<.001);assert.ok(r.drift<1.84);assert.ok(r.y>15);}
+ assert.ok(Math.max(...runs.map(r=>r.y))-Math.min(...runs.map(r=>r.y))<1e-9);
+ const up=altitudeMotion(0,1,.2),down=altitudeMotion(0,-1,.2);assert.equal(up.delta,-down.delta);assert.equal(altitudeMotion(0,0,1).delta,0);
+});

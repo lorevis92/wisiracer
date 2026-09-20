@@ -350,3 +350,14 @@ collision boxes now have conservative roof heights: above-roof flight is allowed
 and descending through a roof from above is stopped. These are approximate
 extruded footprints, not triangle-accurate collisions. Other tracks keep their
 height-following behavior. Physical sensor direction and feel need device review.
+
+### Revised altitude ergonomics
+Vertical gyro control is replaced by independent hold-to-rise / hold-to-descend
+buttons (SALI / SCENDI), next to brake and boost. Lateral gyro and its inversion
+option remain unchanged. W/S and arrow up/down work on desktop. Vertical speed
+is limited to 22 units/s independently of forward speed/boost, with exact
+exponential integration and faster damping on release. Releasing both buttons
+levels the ship and settles at the resulting altitude; terrain and rooftop
+clearance protections still apply. Camera pitch follows only 18% of hull pitch
+to keep the horizon steady. Build and 30 tests pass, including 30/60/120fps
+altitude response. Physical-phone ergonomics remain to be evaluated.
