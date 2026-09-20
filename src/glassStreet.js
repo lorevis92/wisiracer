@@ -1,3 +1,4 @@
+import {foliageTexture,FOLIAGE_COLORS} from './cityFoliage.js';
 import * as THREE from 'three';
 
 // One authored street segment, shared between city and inspection view.
@@ -54,8 +55,8 @@ export function buildGlassStreet(scene,art,{depth=38,width=56,height=65,x=0,z=0,
   for(const dz of [-1.3,1.3])B(bronze,-depth/2-5,.5,zz+dz,.8,.8,.13);
  }
  // Fine geometric leaves allow gaps and cast irregular shadows without alpha cards.
- const bark=material(0x62513e),leafMat=material(0xffffff,1,{side:THREE.DoubleSide});
- const leafGeo=new THREE.PlaneGeometry(.35,.75);const leaves=[],branches=[];
+ const bark=material(0x62513e),leafMat=material(0xffffff,1,{side:THREE.DoubleSide,map:art.foliageMap||foliageTexture(),alphaTest:.45});
+ const leafGeo=new THREE.PlaneGeometry(.8,.8);const leaves=[],branches=[];
  let seed=9381;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  for(const zz of [-width*.42,-width*.14,width*.14,width*.42]){
   const tx=-depth/2-16;
@@ -73,7 +74,7 @@ export function buildGlassStreet(scene,art,{depth=38,width=56,height=65,x=0,z=0,
  const treeBranches=new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,7),bark,branches.length);
  branches.forEach(({a,b,r},i)=>{dummy.position.copy(a).add(b).multiplyScalar(.5);dummy.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());dummy.scale.set(r,a.distanceTo(b),r);dummy.updateMatrix();treeBranches.setMatrixAt(i,dummy.matrix);});treeBranches.castShadow=true;treeBranches.computeBoundingSphere();root.add(treeBranches);
  const canopy=new THREE.InstancedMesh(leafGeo,leafMat,leaves.length);
- leaves.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,v.ry,0);dummy.scale.setScalar(v.scale);dummy.updateMatrix();canopy.setMatrixAt(i,dummy.matrix);canopy.setColorAt(i,new THREE.Color().setHSL(.22+rand()*.07,.25+rand()*.15,.45+rand()*.18));});canopy.castShadow=true;canopy.receiveShadow=true;canopy.computeBoundingSphere();root.add(canopy);
+ leaves.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,v.ry,0);dummy.scale.setScalar(v.scale);dummy.updateMatrix();canopy.setMatrixAt(i,dummy.matrix);canopy.setColorAt(i,new THREE.Color(FOLIAGE_COLORS[Math.floor(i/770)%6]).offsetHSL(0,0,(rand()-.5)*.1));});canopy.castShadow=true;canopy.receiveShadow=true;canopy.computeBoundingSphere();root.add(canopy);
  // Pedestrians move only along the protected walking strip, never across the race lane.
  const people=[],skin=material(0xb68e70),trousers=material(0x414a51),coat=[material(0x806e59),material(0x546779),material(0x6c514d)];
  const limbGeo=new THREE.CylinderGeometry(.09,.075,.8,7),headGeo=new THREE.SphereGeometry(.18,10,8),torsoGeo=new THREE.CylinderGeometry(.24,.17,.65,8);

@@ -1,3 +1,4 @@
+import {buildCityFoliage} from './cityFoliage.js';
 import * as THREE from 'three';
 import {buildRedFoxInterior} from './redFoxInterior.js';
 import {buildRedFoxWindows} from './redFoxWindows.js';
@@ -35,6 +36,7 @@ export function buildRedFox(scene,art){
  for(const x of [-1,1]){box(red,x,.4,8.1,1.8,.8,.18);box(glass,x,2.5,8.1,1.8,3.4,.08);box(bronze,x*.2,2.1,8.3,.1,.6,.12);}
  for(const x of [-2,0,2])box(red,x,2.5,8.1,.14,5,.25);
  buildRedFoxInterior(group);
+ buildCityFoliage(group,[{x:-18,y:.2,z:15,height:7,radius:2.5,tone:2},{x:18,y:.2,z:15,height:7.5,radius:2.6,tone:4}],{texture:art.foliageMap});
  for(const x of [-12.8,12.8]){box(bronze,x,3.8,9.6,.12,.8,.8);box(warm,x,3.5,10,.32,.65,.3);box(dark,x,3.9,10,.5,.15,.5);}
  // Painted timber pilasters and recessed panels give the pub a crafted frontage.
  for(const x of [-13.5,-8,-2.2,2.2,8,13.5]){

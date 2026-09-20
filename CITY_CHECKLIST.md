@@ -77,3 +77,17 @@ interactions are not implemented by this pass.
 The pedestrians are simple articulated figures, not realistic human assets.
 Foliage is modeled leaf geometry, not a photoreal scanned tree. This segment
 uses the existing office Higgsfield reference; no new reference image was needed.
+
+## City-wide foliage, color and relief
+- [x] Higgsfield leaf-spray asset converted to alpha-tested foliage
+- [x] Six vivid natural palettes, with deterministic variation within crowns
+- [x] Replace 566 courtyard trees and 22 central-garden trees
+- [x] Add 194 route trees and two Red Fox entrance trees
+- [x] Update four showcase trees with the same detailed foliage source
+- [x] Projecting podium piers and bands on all 1,118 secondary lots
+- [x] 2048px local shadows and lower normal bias for contact definition
+- [ ] Physical-phone performance and alpha-shadow visual validation
+
+This is a city-wide material/geometry pass, not individually finished bespoke
+buildings. Hyperrealism, all-building interiors and scanned human assets remain
+outstanding. No claim of photorealism follows from automated geometry checks.

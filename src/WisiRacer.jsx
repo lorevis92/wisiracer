@@ -343,15 +343,15 @@ function initGame(container, cfg, ui) {
   scene.fog = new THREE.FogExp2(TR.fog, TR.fogD);
   const camera = new THREE.PerspectiveCamera(78, W() / H(), 0.1, 6000);
 
-  scene.add(new THREE.AmbientLight(TR.amb, TR.masterplan ? .65 : TR.city ? 1.25 : 0.6));
+  scene.add(new THREE.AmbientLight(TR.amb, TR.masterplan ? .45 : TR.city ? 1.25 : 0.6));
   if(TR.masterplan){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;scene.add(new THREE.HemisphereLight(0xc8e5ff,0x615343,1.25));}
   const sun = new THREE.DirectionalLight(TR.sun, TR.masterplan ? 2.4 : 1.1);
   sun.position.set(300, 500, 200); scene.add(sun);
   if(TR.masterplan){
     renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+    sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
     Object.assign(sun.shadow.camera,{left:-220,right:220,top:220,bottom:-220,near:1,far:1100});
-    sun.shadow.bias=-.00025;sun.shadow.normalBias=.65;scene.add(sun.target);
+    sun.shadow.bias=-.00025;sun.shadow.normalBias=.2;scene.add(sun.target);
   }
 
   /* ------ stelle (con star-warp dinamico) ------ */

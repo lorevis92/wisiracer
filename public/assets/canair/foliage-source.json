@@ -1,0 +1,7 @@
+{
+  "provider": "Higgsfield",
+  "model": "gpt_image_2_5",
+  "job": "ec70f94d-11db-4090-8518-69d4bdf0ddef",
+  "source": "https://d8j0ntlcm91z4.cloudfront.net/user_2zb5ZV54tVZaEciJhttK2hXzX6g/hf_20260919_203441_ec70f94d-11db-4090-8518-69d4bdf0ddef.png",
+  "processing": "White background keyed to alpha; neutral luminance retained for per-tree color; resized to 512px WebP."
+}

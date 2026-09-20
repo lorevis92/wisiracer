@@ -7,7 +7,7 @@ import {metropolisLots} from '../src/metropolis.js';
 globalThis.document={createElement:()=>({getContext:()=>({clearRect(){},strokeText(){}})})};
 const scene=new THREE.Scene(),material=new THREE.MeshStandardMaterial();
 const curve=new THREE.CatmullRomCurve3(MASTERPLAN.pts.map(p=>new THREE.Vector3(...p)),true);
-buildCityArt(scene,curve,MASTERPLAN.widthAt,{stone:material,roof:material,facade:material});
+buildCityArt(scene,curve,MASTERPLAN.widthAt,{stone:material,roof:material,facade:material,foliageMap:new THREE.Texture()});
 let batches=0,instances=0;
 scene.traverse(o=>{if(o.isInstancedMesh){batches++;instances+=o.count;if(!o.instanceMatrix.array.every(Number.isFinite)||!Number.isFinite(o.boundingSphere.radius))throw Error('Invalid instance bounds');}});
 const lots=metropolisLots(curve.getSpacedPoints(1600).map(p=>p.divideScalar(4)),landmarks);

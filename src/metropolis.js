@@ -37,7 +37,7 @@ export function buildMetropolis(group,lots,art,fallback){
  const glass=new THREE.MeshStandardMaterial({color:0x46616a,roughness:.32,metalness:.48});
  const copper=new THREE.MeshStandardMaterial({color:0x776153,roughness:.53,metalness:.4});
  const green=new THREE.MeshStandardMaterial({color:0x425b38,roughness:1});
- const bark=new THREE.MeshStandardMaterial({color:0x655142,roughness:1});
+ group.userData.courtyardTrees=[];
  const stone=art?.stone||fallback;
  function add(key,material,x,y,h,w,d,bottom,shape='box'){
   key+=':'+shape+':'+material.uuid;
@@ -77,6 +77,12 @@ export function buildMetropolis(group,lots,art,fallback){
     for(const side of [-1,1])add(key,copper,x+side*w*.43,y,height*.65,.3,d*.87,19);
    }
   }
+  // Relief on all podium elevations: actual projecting piers and shadow lines.
+  for(const side of [-1,1]){
+   for(let col=-2;col<=2;col++)add(key,copper,x+col*w*.18,y+side*(frontDepth/2+.12),19,.12,.3,.5);
+   for(const level of [7,13,19])add(key,stone,x,y+side*(frontDepth/2+.14),.18,w,.4,level);
+   for(let col=-1;col<=1;col++)add(key,stone,x+side*(w/2+.05),y+col*frontDepth*.3,19,.2,.16,.5);
+  }
   // Secondary streets gain distinct entrance thresholds, sunshades and services.
   const frontage=frontDepth/2+.12;
   add(key,copper,x,y+frontage,5.3,w*.18,.08,-6.7);
@@ -101,8 +107,7 @@ export function buildMetropolis(group,lots,art,fallback){
    for(const side of [-1,1]){
     const tx=x+side*w*.35,ty=y+d*.44;
     add(key,stone,tx,ty,.6,2.4,2.4,-6.9);
-    add(key,bark,tx,ty,5,.25,.25,-6.3,'round');
-    add(key,green,tx,ty,5.5,2.7,2.7,-3,'leaf');
+    group.userData.courtyardTrees.push({x:tx*4,y:-6.3,z:-ty*4,height:8.5,radius:3.7});
    }
   }
  }

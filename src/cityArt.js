@@ -1,3 +1,4 @@
+import {buildCityFoliage} from './cityFoliage.js';
 import {buildGlassStreet} from './glassStreet.js';
 import * as THREE from 'three';
 import {buildRedFox} from './redFox.js';
@@ -25,6 +26,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
  scene.userData.architectureRegistry=[];
  const samples=curve.getSpacedPoints(900),length=curve.getLength();
  let seed=741;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const streetTrees=[];
  let hasGlassStreet=false;
  const n=Math.floor(length/95);
  for(let i=0;i<n;i++)for(const sign of [-1,1]){
@@ -48,6 +50,11 @@ export function buildCityArt(scene,curve,widthAt,mat){
    design={type:'uffici vetro — tratto completo',reference:1};
   }else design=buildStreetArchitecture({add,place,yaw,depth,w,h,sign,id,materials:architecture});
   scene.userData.architectureRegistry.push({id:'route-'+id,x:center.x,z:center.z,...design});
+  // Trees in the existing sidewalk margin, clear of the road and building frontage.
+  if(design.type!=='uffici vetro — tratto completo')for(const along of [-w*.28,w*.28]){
+   const pos=place(-sign*(depth/2+16),along,0);
+   streetTrees.push({x:pos.x,y:-6.6,z:pos.z,height:8+(id%4),radius:3.2,tone:id%6});
+  }
   // Street furniture remains outside the carriageway.
   if(i%3===0){
    const bench=p.clone().addScaledVector(side,sign*(widthAt(t)+21)).addScaledVector(tan,22);
@@ -61,6 +68,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
   add(bronze,lamp.clone().addScaledVector(side,-sign*3).setY(19),[7,.5,.7],yaw);
   add(light,lamp.clone().addScaledVector(side,-sign*6).setY(18.5),[3,.35,1.4],yaw);
  }
+ buildCityFoliage(scene,streetTrees,{texture:mat.foliageMap});
  buildRedFox(scene,mat);
  for(const {material,items} of batches.values()){const mesh=new THREE.InstancedMesh(cube,material,items.length),dummy=new THREE.Object3D();items.forEach((a,i)=>{dummy.position.copy(a.p);dummy.scale.set(...a.size);dummy.rotation.set(0,a.yaw,0);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();group.add(mesh);}
  return group;

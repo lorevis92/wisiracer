@@ -1,3 +1,4 @@
+import {buildCityFoliage} from './cityFoliage.js';
 import {AUTHORED_LANDMARKS,buildAuthoredLandmark} from './cityLandmarks.js';
 import * as THREE from 'three';
 import {worldMaterial} from './surfaceMaterials.js';
@@ -34,6 +35,7 @@ export function buildMasterplan(scene,curve,art){
  for(const l of lots)scene.userData.buildings.push({x:l.x*4,z:-l.y*4,hx:l.w*2,hz:l.d*2*(Math.abs(Math.round(l.x*7+l.y*11))%4===2?.65:1)});
  for(const [name,x,y,,w,d]of landmarks.filter(l=>l[0]!=="THE RED FOX"&&!AUTHORED_LANDMARKS.some(a=>a.name===l[0])))scene.userData.buildings.push({x:x*4,z:-y*4,hx:w/2,hz:d/2});
  g.userData.metropolis=buildMetropolis(g,lots,art,grey);
+ buildCityFoliage(scene,g.userData.courtyardTrees);
  for(const x of AVENUES)box('Viale urbano',x,-35,-.45,22,2010,.3,road);
  for(const y of STREETS)box('Trasversale urbana',-120,y,-.45,2160,16,.3,road);
  function sign(text,x,y,h){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#132435';ctx.fillRect(0,0,512,96);ctx.fillStyle='#fff1cb';ctx.font='bold 42px sans-serif';ctx.textAlign='center';ctx.fillText(text,256,64);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const o=new THREE.Mesh(new THREE.PlaneGeometry(60/CITY_SCALE,11.25),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));o.position.set(x,h,-y);let near=samples.reduce((a,p)=>p.distanceToSquared(o.position)<a.distanceToSquared(o.position)?p:a,samples[0]);o.lookAt(near.x,h,near.z);g.add(o);}

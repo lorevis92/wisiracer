@@ -307,3 +307,14 @@ three seconds, and assigned only to this building's glass. Failure retains the
 sky environment. Reflections are static and approximate, not ray traced.
 Dedicated capture textures are disposed on scene exit. Pedestrian path bounds
 and geometry are tested; visual quality and phone performance remain unverified.
+
+### City-wide color and foliage
+cityFoliage.js replaces courtyard and central-garden sphere crowns with modeled
+branches and alpha-tested leaf sprays from Higgsfield. An achromatic cutout
+retains photographic leaf detail while instance colors provide emerald, lime,
+gold, copper and burgundy crowns. The same asset updates the glass-street trees.
+Route sidewalks and Red Fox receive new trees; spatial 500-unit batches support
+frustum culling. Secondary-building podiums gain projecting piers and bands.
+Local shadow resolution is 2048, with reduced normal bias and ambient fill.
+This increases shadow cost and requires S24 Ultra measurement before claiming
+performance or hyperrealistic results. Source provenance is foliage-source.json.
