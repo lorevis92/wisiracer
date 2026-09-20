@@ -32,8 +32,8 @@ export function buildMasterplan(scene,curve,art){
  const samples=curve.getSpacedPoints(1600).map(p=>new THREE.Vector3(p.x/CITY_SCALE,p.y,p.z/CITY_SCALE));
  const lots=metropolisLots(samples,landmarks);
  scene.userData.buildings ||= [];
- for(const l of lots)scene.userData.buildings.push({x:l.x*4,z:-l.y*4,hx:l.w*2,hz:l.d*2*(Math.abs(Math.round(l.x*7+l.y*11))%4===2?.65:1)});
- for(const [name,x,y,,w,d]of landmarks.filter(l=>l[0]!=="THE RED FOX"&&!AUTHORED_LANDMARKS.some(a=>a.name===l[0])))scene.userData.buildings.push({x:x*4,z:-y*4,hx:w/2,hz:d/2});
+ for(const l of lots)scene.userData.buildings.push({x:l.x*4,z:-l.y*4,maxY:l.h+3,hx:l.w*2,hz:l.d*2*(Math.abs(Math.round(l.x*7+l.y*11))%4===2?.65:1)});
+ for(const [name,x,y,h,w,d]of landmarks.filter(l=>l[0]!=="THE RED FOX"&&!AUTHORED_LANDMARKS.some(a=>a.name===l[0])))scene.userData.buildings.push({x:x*4,z:-y*4,maxY:h-7,hx:w/2,hz:d/2});
  g.userData.metropolis=buildMetropolis(g,lots,art,grey);
  buildCityFoliage(scene,g.userData.courtyardTrees);
  for(const x of AVENUES)box('Viale urbano',x,-35,-.45,22,2010,.3,road);

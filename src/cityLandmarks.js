@@ -82,6 +82,6 @@ export function buildAuthoredLandmark(scene,index,art,{placeInCity=true}={}){
  const light=new THREE.PointLight(0xffcd91,index===0?75:110,24,2);light.position.set(0,index===0?4.7:7,7);g.add(light);
  const dummy=new THREE.Object3D();
  for(const {shape,m,items}of batches.values()){const mesh=new THREE.InstancedMesh(geos[shape],m,items.length);items.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,0,0);dummy.scale.set(v.w,v.h,v.d);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.name=spec.name+' architecture';mesh.castShadow=!m.transparent;mesh.receiveShadow=true;mesh.computeBoundingSphere();g.add(mesh);}
- if(placeInCity){scene.userData.buildings ||= [];scene.userData.buildings.push({x:spec.x,z:spec.z,hx:w/2,hz:d/2});}
+ if(placeInCity){scene.userData.buildings ||= [];scene.userData.buildings.push({x:spec.x,z:spec.z,maxY:h-5,hx:w/2,hz:d/2});}
  return g;
 }

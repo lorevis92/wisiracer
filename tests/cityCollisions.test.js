@@ -11,3 +11,10 @@ test('spatial index finds large rotated buildings across cell boundaries',()=>{
  const box={x:159,z:159,hx:70,hz:30,yaw:.7},near=buildingIndex([box]);assert.ok(near(170,170).includes(box));assert.equal(near(-1000,-1000).length,0);
  const b={x:0,z:0,vx:30,vz:0};assert.equal(resolveBuilding(b,box),null);
 });
+
+test('flight clears rooftops and descending hull stops above the roof',()=>{
+ const box={x:0,z:0,hx:10,hz:20,maxY:30};
+ const high={x:0,z:0,y:40,previousY:40,vx:10,vz:0};assert.equal(resolveBuilding(high,box),null);assert.equal(high.x,0);
+ const descending={x:0,z:0,y:31,previousY:35,vx:10,vz:0};assert.ok(resolveBuilding(descending,box));assert.equal(descending.y,33);assert.equal(descending.x,0);assert.ok(descending.roofContact);
+ const beside={x:14,z:0,y:12,previousY:12,vx:-20,vz:0};assert.ok(resolveBuilding(beside,box));assert.ok(beside.x>17);
+});

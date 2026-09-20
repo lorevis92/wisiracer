@@ -38,7 +38,7 @@ export function buildCityArt(scene,curve,widthAt,mat){
   const planX=center.x/4,planY=-center.z/4,margin=Math.hypot(depth,w)/8;
   if([...AVENUES,-750,-400,0,400,750].some(x=>Math.abs(planX-x)<margin+12)||[...STREETS,-350,-50,250].some(y=>Math.abs(planY-y)<margin+21))continue;
   scene.userData.buildings ||= [];
-  scene.userData.buildings.push({x:center.x,z:center.z,hx:depth/2,hz:w/2,yaw});
+  scene.userData.buildings.push({x:center.x,z:center.z,maxY:h+4,hx:depth/2,hz:w/2,yaw});
   const place=(out,along,y)=>center.clone().addScaledVector(side,out).addScaledVector(tan,along).setY(y-7);
   const id=i*2+(sign===1?1:0);
   let design;

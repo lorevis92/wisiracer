@@ -70,6 +70,6 @@ export function buildRedFox(scene,art){
  tube([[9.4,5.4],[10.1,5.2],[10.4,4.95],[9.5,4.9],[6,4.92],[2,4.93],[-2,4.93],[-6,4.94],[-10,5.03],[-11.2,5.18]]);
  const spill=new THREE.PointLight(0xff3825,12,9,2);spill.position.set(0,6,10.2);group.add(spill);
  for(const [material,items]of batches){const mesh=new THREE.InstancedMesh(cube,material,items.length);mesh.name='Red Fox architecture';items.forEach((v,i)=>{dummy.position.set(v.x,v.y,v.z);dummy.rotation.set(v.rx,0,0);dummy.scale.set(v.w,v.h,v.d);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=!material.transparent;mesh.receiveShadow=true;mesh.computeBoundingSphere();group.add(mesh);}
- scene.userData.buildings ||= [];scene.userData.buildings.push({x:RED_FOX.x,z:RED_FOX.z,hx:14,hz:9});
+ scene.userData.buildings ||= [];scene.userData.buildings.push({x:RED_FOX.x,z:RED_FOX.z,maxY:11,hx:14,hz:9});
  return group;
 }

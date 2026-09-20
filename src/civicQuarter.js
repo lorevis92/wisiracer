@@ -40,6 +40,6 @@ export function buildCivicQuarter(scene,art){
   box(stone,320+side*90,-5.7,z,5,1.8,14);box(bronze,320+side*89,-4.6,z,3,.35,12);
  }
  scene.userData.buildings ||= [];
- scene.userData.buildings.push({x:320,z:-580,hx:17,hz:17},{x:320,z:-680,hx:46,hz:.7});
+ scene.userData.buildings.push({x:320,z:-580,maxY:3,hx:17,hz:17},{x:320,z:-680,maxY:25,hx:46,hz:.7});
  return g;
 }

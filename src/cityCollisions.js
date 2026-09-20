@@ -13,6 +13,11 @@ export function resolveBuilding(body,box,radius=7){
  const x=c*dx-s*dz,z=s*dx+c*dz;
  const qx=Math.max(-box.hx,Math.min(box.hx,x)),qz=Math.max(-box.hz,Math.min(box.hz,z));
  let nx=x-qx,nz=z-qz,d=Math.hypot(nx,nz),penetration;
+ const clearance=3;
+ if(Number.isFinite(body.y)&&Number.isFinite(box.maxY)){
+  if(body.y>=box.maxY+clearance)return null;
+  if(d<radius&&body.previousY>=box.maxY+clearance){body.y=box.maxY+clearance;body.roofContact=true;return {speed:0,nx:0,nz:0};}
+ }
  if(d>=radius)return null;
  if(d>1e-8){nx/=d;nz/=d;penetration=radius-d;}
  else {const px=box.hx-Math.abs(x),pz=box.hz-Math.abs(z);if(px<pz){nx=x<0?-1:1;nz=0;penetration=radius+px;}else{nx=0;nz=z<0?-1:1;penetration=radius+pz;}}

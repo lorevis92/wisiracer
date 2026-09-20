@@ -337,3 +337,16 @@ and requests fresh neutral calibration. Held touch actions have independent
 pointer ownership, preventing another finger or stale release from cancelling
 fire, brake or boost. Blur/visibility changes clear ownership and gyro neutral.
 Build and 27 tests pass; this is not a physical gyroscope test on S24 Ultra.
+
+### Canair altitude controls
+Lateral gyro mapping is reversed following the user's physical-device feedback.
+Setup offers independent steering and pitch inversion. Canair now uses a
+normalized 3D direction with a smoothed +/-0.65-radian pitch target, driven by
+landscape gamma tilt (or W/S, arrow up/down, or vertical movement on the touch pad).
+Neutral input levels pitch without restoring track height; recenter calibrates
+both axes. Camera and ship orientation follow pitch, and the HUD shows altitude.
+Terrain clearance is assisted and altitude is capped at 650 world units. Building
+collision boxes now have conservative roof heights: above-roof flight is allowed
+and descending through a roof from above is stopped. These are approximate
+extruded footprints, not triangle-accurate collisions. Other tracks keep their
+height-following behavior. Physical sensor direction and feel need device review.
