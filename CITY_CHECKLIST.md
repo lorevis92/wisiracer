@@ -91,3 +91,12 @@ uses the existing office Higgsfield reference; no new reference image was needed
 This is a city-wide material/geometry pass, not individually finished bespoke
 buildings. Hyperrealism, all-building interiors and scanned human assets remain
 outstanding. No claim of photorealism follows from automated geometry checks.
+
+## Street-level shopfront pass
+- [x] Six retail uses with deterministic distribution along the circuit
+- [x] Glazing separated from recessed displays, door thresholds and joinery
+- [x] Shared signs and modeled books, cups, flowers, produce and instruments
+- [x] Transparent glass excluded from opaque facade shadow casting
+- [ ] Review visibility through glass on S24 Ultra
+- [ ] Apply authored storefront treatment to secondary-lot shops
+- [ ] Enterable, fully furnished shop rooms and interactions

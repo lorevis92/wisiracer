@@ -1,8 +1,9 @@
+import {shopMaterials,shopfront} from './shopfronts.js';
 import * as THREE from 'three';
 export const ARCHETYPES=['residenza classica','uffici bronzo e vetro','hotel terrazzato','atelier terracotta','residenza bow-window','mercato coperto'];
 export function architectureMaterials(art){
  const mat=(color,roughness=.8,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
- return {wall:[mat(0xc6baa1),mat(0xb3bab6),mat(0xddd2bc),mat(0xa85e41),mat(0xc9ccc0),mat(0xaaa99b)],
+ return {shops:shopMaterials(),wall:[mat(0xc6baa1),mat(0xb3bab6),mat(0xddd2bc),mat(0xa85e41),mat(0xc9ccc0),mat(0xaaa99b)],
   frames:[mat(0x394b42),mat(0x73604a,.35,.65),mat(0x655a4b),mat(0x242a2b),mat(0x6e8075),mat(0x414b4f)],
   panes:[mat(0x47616a,.16,.5),mat(0x34454c,.21,.3),mat(0x566565,.19,.4)],
   cloth:[mat(0xc3bba6),mat(0x8a9186),mat(0x9c8a78)],
@@ -29,11 +30,13 @@ export function buildStreetArchitecture({add,place,yaw,depth,w,h,sign,id,materia
   // Public ground floor: entrance, glazed shop bays, canopy and independent frames.
   for(let k=0;k<cols;k++){
    const u=-length/2+(k+.5)*bay;
-   F(m.panes[(id+k)%3],u,3.7,-.6,bay-.7,6,.08);
-   F(frame,u,6.9,.1,bay-.3,.35,.5);
-   F(frame,u-bay/2+.24,3.7,0,.18,6,.3);
-   F(m.wood,u,1.5,-.4,bay-.85,.6,.15);
-   if((id+k)%3===0)F(m.warm,u,5.8,-.45,bay*.6,.1,.1);
+   if(axis===0&&side===-sign){shopfront(F,u,bay,(id+k)%6,m);}
+   else{
+    F(m.panes[(id+k)%3],u,3.7,-.6,bay-.7,6,.08);
+    F(frame,u,6.9,.1,bay-.3,.35,.5);
+    F(frame,u-bay/2+.24,3.7,0,.18,6,.3);
+    F(m.wood,u,1.5,-.4,bay-.85,.6,.15);
+   }
   }
   if(axis===0&&side===-sign){
    F(frame,0,7.3,1.5,length*.72,.32,3.6);

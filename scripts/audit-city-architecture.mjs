@@ -4,7 +4,7 @@ import {MASTERPLAN,landmarks} from '../src/masterplan.js';
 import {buildCityArt} from '../src/cityArt.js';
 import {metropolisLots} from '../src/metropolis.js';
 // Geometry audit only: this stub does not validate canvas text or GPU rendering.
-globalThis.document={createElement:()=>({getContext:()=>({clearRect(){},strokeText(){}})})};
+globalThis.document={createElement:()=>({getContext:()=>({clearRect(){},strokeText(){},fillRect(){},fillText(){}})})};
 const scene=new THREE.Scene(),material=new THREE.MeshStandardMaterial();
 const curve=new THREE.CatmullRomCurve3(MASTERPLAN.pts.map(p=>new THREE.Vector3(...p)),true);
 buildCityArt(scene,curve,MASTERPLAN.widthAt,{stone:material,roof:material,facade:material,foliageMap:new THREE.Texture()});

@@ -21,7 +21,7 @@ function show(id){
  building=new THREE.Group();scene.add(building);const batches=new Map();
  buildStreetArchitecture({id,depth:38,w:56,h:[43,75,43,34,51,29][id],sign:1,yaw:0,materials,
  place:(x,z,y)=>new THREE.Vector3(x,y,z),add:(mat,p,size)=>{if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push({p,size});}});
- for(const [mat,items]of batches){const mesh=new THREE.InstancedMesh(cube,mat,items.length);items.forEach((v,i)=>{dummy.position.copy(v.p);dummy.scale.set(...v.size);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();building.add(mesh);}
+ for(const [mat,items]of batches){const mesh=new THREE.InstancedMesh(cube,mat,items.length);items.forEach((v,i)=>{dummy.position.copy(v.p);dummy.scale.set(...v.size);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=!mat.transparent;mesh.receiveShadow=true;mesh.computeBoundingSphere();building.add(mesh);}
  document.getElementById('reference').src='/assets/canair/references/type-'+id+'.webp';
 }
 const select=document.getElementById('building');[...ARCHETYPES,...AUTHORED_LANDMARKS.map(a=>a.name),"Palazzo di vetro · tratto completo"].forEach((label,id)=>{const o=document.createElement('option');o.value=id;o.textContent=label;select.appendChild(o);});select.addEventListener('change',()=>show(Number(select.value)));select.value="8";show(8);

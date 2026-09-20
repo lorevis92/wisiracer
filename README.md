@@ -318,3 +318,14 @@ frustum culling. Secondary-building podiums gain projecting piers and bands.
 Local shadow resolution is 2048, with reduced normal bias and ambient fill.
 This increases shadow cost and requires S24 Ultra measurement before claiming
 performance or hyperrealistic results. Source provenance is foliage-source.json.
+
+### Circuit storefront depth
+The 97 architectural-family route buildings now have six deterministic retail
+display types on their road-facing elevations: cafe, books, flowers, atelier,
+market and music. Small modeled displays sit between a recessed back panel and
+transparent glazing, with colored joinery, threshold, door handle and shared
+canvas lettering. These are shallow display sets, not enterable shop interiors.
+The bespoke glass street and narrative landmarks retain their dedicated designs.
+Transparent facade glazing no longer becomes an opaque shadow caster in the
+city's traversal or the architecture viewer. Geometry audit, build and existing
+25 tests pass; GPU transparency and phone performance still need visual review.

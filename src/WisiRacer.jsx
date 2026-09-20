@@ -435,7 +435,7 @@ function initGame(container, cfg, ui) {
   if (TR.city) buildCanair(scene, curve, startT, TR);
   const disposeCityEnvironment=TR.masterplan?cityEnvironment(renderer,scene):()=>{};
   const nearbyBuildings=buildingIndex(scene.userData.buildings||[]);
-  if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=o.castShadow||o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage';}});
+  if(TR.masterplan)scene.traverse(o=>{if(o.isMesh){o.receiveShadow=true;o.castShadow=!o.material?.transparent&&(o.castShadow||o.name.startsWith('City block')||o.parent?.name==='Canair architectural frontage');}});
 
   /* ------ strada luminosa: nastro largo + piloni verticali ai bordi ------ */
   if (!TR.city) {

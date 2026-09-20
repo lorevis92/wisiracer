@@ -1,8 +1,8 @@
 {
   "routeBuildings": 98,
   "secondaryLots": 1118,
-  "batchesIncludingRedFox": 636,
-  "instancesIncludingRedFox": 171178,
+  "batchesIncludingRedFox": 1200,
+  "instancesIncludingRedFox": 190604,
   "gpuVerified": false,
   "buildings": [
     {
