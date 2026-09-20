@@ -329,3 +329,11 @@ The bespoke glass street and narrative landmarks retain their dedicated designs.
 Transparent facade glazing no longer becomes an opaque shadow caster in the
 city's traversal or the architecture viewer. Geometry audit, build and existing
 25 tests pass; GPU transparency and phone performance still need visual review.
+
+### Mobile control review
+Verified the landscape gyro sign against the steering pipeline and existing
+calibration tests. Invalid/portrait orientation now clears residual gyro input
+and requests fresh neutral calibration. Held touch actions have independent
+pointer ownership, preventing another finger or stale release from cancelling
+fire, brake or boost. Blur/visibility changes clear ownership and gyro neutral.
+Build and 27 tests pass; this is not a physical gyroscope test on S24 Ultra.

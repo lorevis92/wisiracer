@@ -1,3 +1,4 @@
+import {heldAction} from './touchControls.js';
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import {cityEnvironment} from "./cityEnvironment.js";
@@ -1597,6 +1598,7 @@ export default function WisiRacer() {
   const [vids, setVids] = useState({});
   const mountRef = useRef(null);
   const mapRef = useRef(null);
+  const actionOwners = useRef({});
   const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
@@ -1750,7 +1752,9 @@ export default function WisiRacer() {
       const onOrientation = (e) => {
         const angle = window.screen.orientation?.angle ?? window.orientation ?? 90;
         const value = phoneTilt(e.beta, e.gamma, angle);
-        if (value === null || window.innerHeight > window.innerWidth) return;
+        if (value === null || window.innerHeight > window.innerWidth) {
+          keysRef.current.gyroSteer=0;gyro.filteredBeta=0;gyro.betaRef=null;return;
+        }
         if (!received) {
           received = true;
           keysRef.current.gyroActive = true;
@@ -1815,20 +1819,14 @@ export default function WisiRacer() {
     });
   }, [hud, trackMap]);
 
-  const touch = (k) => ({
-    onPointerDown: e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); keysRef.current[k] = 1; },
-    onPointerUp: () => { keysRef.current[k] = 0; },
-    onPointerCancel: () => { keysRef.current[k] = 0; },
-    onLostPointerCapture: () => { keysRef.current[k] = 0; },
-    onContextMenu: e => e.preventDefault(),
-  });
+  const touch = k => heldAction(keysRef.current,actionOwners.current,k);
   const steerAt = e => {
     const rect=e.currentTarget.getBoundingClientRect();
     keysRef.current.touchSteer=padSteering(e.clientX,rect.left,rect.width);
   };
   const releaseSteering = () => { steeringPointer.current=null;keysRef.current.touchSteer=0; };
   useEffect(()=>{
-    const clear=()=>{Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
+    const clear=()=>{for(const key of Object.keys(actionOwners.current))delete actionOwners.current[key];gyroRef.current.betaRef=null;Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
     window.addEventListener('blur',clear);document.addEventListener('visibilitychange',clear);
     return ()=>{window.removeEventListener('blur',clear);document.removeEventListener('visibilitychange',clear);};
   },[]);
