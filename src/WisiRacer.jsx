@@ -1,3 +1,4 @@
+import {createAltitudeGesture,verticalAcceleration,gestureCommand} from "./altitudeGestures.js";
 import {heldAction} from './touchControls.js';
 import React, { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
@@ -844,7 +845,7 @@ function initGame(container, cfg, ui) {
       player.boosting = boosting;
 
       player.previousY=player.mesh.position.y;
-      const vertical=ctrl&&TR.masterplan?((keys.up?1:0)-(keys.down?1:0)):0;
+      const vertical=ctrl&&TR.masterplan?((keys.up||keys.down)?((keys.up?1:0)-(keys.down?1:0)):gestureCommand(keys,performance.now())):0;
       const lift=altitudeMotion(player.verticalSpeed,vertical,dt);
       player.verticalSpeed=lift.velocity;
       if(TR.masterplan)player.mesh.position.y+=lift.delta;
@@ -1604,6 +1605,9 @@ export default function WisiRacer() {
   const [cameraDistance, setCameraDistance] = useState(10);
   const [renderScale, setRenderScale] = useState(1.25);
   const [useGyro, setUseGyro] = useState(true);
+  const [useMotionAltitude,setUseMotionAltitude]=useState(true);
+  const motionEnabledRef=useRef(false);
+  const altitudeGestureRef=useRef(createAltitudeGesture());
   const [invertSteering,setInvertSteering]=useState(false);
   const steeringPointer = useRef(null);
   const [diffKey, setDiffKey] = useState("pilot");
@@ -1619,7 +1623,7 @@ export default function WisiRacer() {
   const mountRef = useRef(null);
   const mapRef = useRef(null);
   const actionOwners = useRef({});
-  const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, gyroActive: false });
+  const keysRef = useRef({ touchSteer: 0, left: 0, right: 0, up: 0, down: 0, boost: 0, fire: 0, brake: 0, gyroSteer: 0, motionLift:0, motionUntil:0, gyroActive: false });
   const msgTimer = useRef(null);
   const exprTimer = useRef(null);
   const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
@@ -1803,7 +1807,26 @@ export default function WisiRacer() {
       };
     }
 
+    const resetMotion=()=>{altitudeGestureRef.current.reset();keysRef.current.motionLift=0;keysRef.current.motionUntil=0;};
+    resetMotion();
+    let receivedMotion=false;
+    const onMotion=e=>{
+      if(document.hidden||window.innerHeight>window.innerWidth){resetMotion();return;}
+      const value=verticalAcceleration(e);
+      if(value!==null)receivedMotion=true;
+      const direction=altitudeGestureRef.current.sample(value,performance.now());
+      if(direction){keysRef.current.motionLift=direction;keysRef.current.motionUntil=performance.now()+480;}
+    };
+    const enableMotion=isTouch&&motionEnabledRef.current&&TRACKS[trackKey].masterplan;
+    if(enableMotion)window.addEventListener("devicemotion",onMotion);
+    const motionTimeout=enableMotion?window.setTimeout(()=>{
+      if(!receivedMotion)setMsg("Gesti quota non disponibili: usa SALI / SCENDI. Controlla i permessi dei sensori.");
+    },4500):null;
+
     return () => {
+      window.removeEventListener("devicemotion",onMotion);
+      window.clearTimeout(motionTimeout);
+      resetMotion();
       cleanup();
       if (gyroCleanup) gyroCleanup();
       clearTimeout(msgTimer.current);
@@ -1846,25 +1869,20 @@ export default function WisiRacer() {
   };
   const releaseSteering = () => { steeringPointer.current=null;keysRef.current.touchSteer=0; };
   useEffect(()=>{
-    const clear=()=>{for(const key of Object.keys(actionOwners.current))delete actionOwners.current[key];gyroRef.current.betaRef=null;Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
+    const clear=()=>{for(const key of Object.keys(actionOwners.current))delete actionOwners.current[key];gyroRef.current.betaRef=null;altitudeGestureRef.current.reset();Object.keys(keysRef.current).filter(k=>k!=='gyroActive').forEach(k=>keysRef.current[k]=0);releaseSteering();};
     window.addEventListener('blur',clear);document.addEventListener('visibilitychange',clear);
     return ()=>{window.removeEventListener('blur',clear);document.removeEventListener('visibilitychange',clear);};
   },[]);
 
   const startRace = async () => {
-    gyroEnabledRef.current = false;
-    if (useGyro && isTouch && typeof DeviceOrientationEvent !== "undefined") {
-      if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        try {
-          const perm = await DeviceOrientationEvent.requestPermission();
-          gyroEnabledRef.current = perm === "granted";
-        } catch (e) {
-          gyroEnabledRef.current = false;
-        }
-      } else {
-        gyroEnabledRef.current = true;
-      }
-    }
+    const sensorPermission=async sensor=>{
+      if(!sensor)return false;
+      try{return typeof sensor.requestPermission==="function"?await sensor.requestPermission()==="granted":true;}catch{return false;}
+    };
+    // Request both in the original tap, before awaiting either permission.
+    const orientationPermission=useGyro&&isTouch?sensorPermission(window.DeviceOrientationEvent):Promise.resolve(false);
+    const motionPermission=useMotionAltitude&&isTouch&&TRACKS[trackKey].masterplan?sensorPermission(window.DeviceMotionEvent):Promise.resolve(false);
+    [gyroEnabledRef.current,motionEnabledRef.current]=await Promise.all([orientationPermission,motionPermission]);
     if (TRACKS[trackKey].practice) setModeKey("grand_prix");
     setResults(null);
     const v = vids[trackKey];
@@ -1986,7 +2004,9 @@ export default function WisiRacer() {
             <label>Telecamera <select value={cameraDistance} onChange={e=>setCameraDistance(Number(e.target.value))}><option value={8}>Molto vicina</option><option value={10}>Vicina</option><option value={13}>Media</option></select></label>
             <label>Grafica <select value={renderScale} onChange={e=>setRenderScale(Number(e.target.value))}><option value={1}>Leggera</option><option value={1.25}>Bilanciata</option><option value={1.75}>Dettagliata</option></select></label>
             {isTouch && <label><input type="checkbox" checked={invertSteering} onChange={e=>setInvertSteering(e.target.checked)} /> Inverti destra/sinistra</label>}
-            {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Sterza inclinando il telefono · quota con SALI / SCENDI</label>}
+            {isTouch && <label><input type="checkbox" checked={useGyro} onChange={e=>setUseGyro(e.target.checked)} /> Sterza inclinando il telefono</label>}
+            {isTouch && TRACKS[trackKey].masterplan && <label><input type="checkbox" checked={useMotionAltitude} onChange={e=>setUseMotionAltitude(e.target.checked)} /> Quota con gesti: solleva il telefono per salire, abbassalo per scendere</label>}
+            {isTouch && TRACKS[trackKey].masterplan && useMotionAltitude && <p className="wr-hint">Tieni lo schermo rivolto verso di te. Parti con il telefono fermo, fai un breve gesto verticale e fermati prima del successivo. Ogni gesto cambia la quota di un piccolo tratto. SALI / SCENDI restano disponibili.</p>}
           </div>
           <p className="wr-hint">Accelerazione automatica · frena prima della curva · boost in uscita. Prova guida: un giro con sparo libero e avversari che non sparano.</p>
           <div className="wr-label wr-disp">Difficoltà</div>
@@ -2110,7 +2130,7 @@ export default function WisiRacer() {
               <div className="wr-touch" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", pointerEvents: "auto" }}>
                   <button className="wr-tbtn wr-fire" {...touch("fire")} aria-label="Spara" style={hud?.hot ? {opacity:0.6} : undefined}><span aria-hidden="true">⌖</span><span>{hud?.hot ? "CALORE" : "SPARA"}</span></button>
-                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
+                  {gyroActive && <button className="wr-recenter" onClick={()=>{gyroRef.current.betaRef=null;keysRef.current.gyroSteer=0;altitudeGestureRef.current.reset();keysRef.current.motionUntil=0;}} aria-label="Ricentra sterzo">↺ Ricentra</button>}
                   {!gyroActive && <div className="wr-steer" role="slider" aria-label="Sterzo" aria-valuemin={-1} aria-valuemax={1}
                     onPointerDown={e=>{if(steeringPointer.current!==null)return;e.preventDefault();steeringPointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);steerAt(e);}}
                     onPointerMove={e=>{if(e.pointerId===steeringPointer.current)steerAt(e);}}

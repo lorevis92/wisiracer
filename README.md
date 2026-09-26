@@ -361,3 +361,16 @@ levels the ship and settles at the resulting altitude; terrain and rooftop
 clearance protections still apply. Camera pitch follows only 18% of hull pitch
 to keep the horizon steady. Build and 30 tests pass, including 30/60/120fps
 altitude response. Physical-phone ergonomics remain to be evaluated.
+
+### Physical up/down gestures (experimental)
+Canair now enables optional DeviceMotion altitude gestures by default on touch
+screens. Translate the phone vertically while keeping its screen facing you;
+this is distinct from pitch tilt. A valid acceleration vector is projected onto
+the gravity vector derived from accelerationIncludingGravity minus acceleration.
+Both vectors are required; missing sensors leave SALI/SCENDI available.
+A sustained 1.3 m/s² impulse triggers 480 ms of damped vertical thrust. A 650 ms
+lockout and 300 ms quiet rearm reject the braking impulse and initial pickup.
+Gesture commands expire even if events stop. Blur, portrait, recenter and race
+cleanup reset input. Touch/keyboard altitude has priority; lateral tilt remains
+unchanged. This recognizes gestures, not absolute phone height. 33 Node tests
+and production build pass; physical S24 Ultra sensor sign/comfort remain unverified.
