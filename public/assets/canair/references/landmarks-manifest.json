@@ -1,0 +1,24 @@
+{
+  "references": [
+    {
+      "index": 0,
+      "job_id": "8054d7d8-3c35-47cd-bf4e-12f5f4533b6c",
+      "status": "completed",
+      "type": "image",
+      "model": "gpt_image_2_5",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_2zb5ZV54tVZaEciJhttK2hXzX6g/hf_20260919_200838_8054d7d8-3c35-47cd-bf4e-12f5f4533b6c.png",
+      "prompt": "Photoreal architectural photo of Mawhet Roset, an affordable modest but welcoming urban bed and breakfast in Canair, a subtly futuristic believable city. Four-storey warm cream plaster building, sage wooden window frames, individual narrow balcony doors and small iron balconies, asymmetric curtains, central recessed entrance and modest brass name plaque MAWHET ROSET, breakfast lounge visible behind ground floor glass, planted entrance. Flat corniced roof. No brick, no cyberpunk. Complete building three-quarter view, afternoon.",
+      "file": "mawhet.webp"
+    },
+    {
+      "index": 1,
+      "job_id": "4a827ff7-8628-4b74-853a-596c9467948d",
+      "status": "completed",
+      "type": "image",
+      "model": "gpt_image_2_5",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_2zb5ZV54tVZaEciJhttK2hXzX6g/hf_20260919_200837_4a827ff7-8628-4b74-853a-596c9467948d.png",
+      "prompt": "Photoreal architectural photo of Lube Tone, an elegant intimate live music bar in Canair. Two-storey dark olive and warm limestone building, long bronze entrance canopy, six tall narrow bronze fins on frontage, expansive ground floor glazing with warm tables and a small stage visible, upper floor recessed ribbon windows, rooftop terrace with fine balustrade, tasteful gold letters LUBE TONE. Real construction, refined not extravagant, subtle near future, no neon cyberpunk. Complete building three-quarter view daylight.",
+      "file": "lube.webp"
+    }
+  ]
+}

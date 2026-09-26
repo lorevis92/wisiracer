@@ -1,0 +1,695 @@
+{
+  "routeBuildings": 98,
+  "secondaryLots": 1118,
+  "batchesIncludingRedFox": 1200,
+  "instancesIncludingRedFox": 190604,
+  "gpuVerified": false,
+  "buildings": [
+    {
+      "id": "route-82",
+      "x": 3111.0132761662203,
+      "z": 2695.9516255213566,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-84",
+      "x": 3209.6455225092704,
+      "z": 2681.6258709075664,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-88",
+      "x": 3413.993773287984,
+      "z": 2645.6749913125327,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-90",
+      "x": 3522.895127303765,
+      "z": 2599.6566347347643,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-93",
+      "x": 3432.172412960339,
+      "z": 2350.000479335221,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-95",
+      "x": 3460.7407886862256,
+      "z": 2314.3578831031155,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-97",
+      "x": 3512.9587117036363,
+      "z": 2251.8960605483353,
+      "type": "uffici vetro — tratto completo",
+      "reference": 1
+    },
+    {
+      "id": "route-103",
+      "x": 3733.365699557663,
+      "z": 1981.4017196307586,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-106",
+      "x": 4120.403256948144,
+      "z": 1904.8960071577112,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-113",
+      "x": 4003.975598222119,
+      "z": 1624.0478329009636,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-114",
+      "x": 4279.179102749715,
+      "z": 1619.9635334562777,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-115",
+      "x": 4027.475661471831,
+      "z": 1551.3930968820769,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-122",
+      "x": 4329.601340371573,
+      "z": 1211.9318538851294,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-123",
+      "x": 4068.952781258123,
+      "z": 1204.8539654515052,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-132",
+      "x": 4331.916459955095,
+      "z": 921.1215004117063,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-133",
+      "x": 4073.9349111938914,
+      "z": 920.6957161703897,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-134",
+      "x": 4327.010612884809,
+      "z": 829.3796820962608,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-135",
+      "x": 4067.6233858402557,
+      "z": 829.0448887847418,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-140",
+      "x": 4333.473145335627,
+      "z": 494.1090966320642,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-141",
+      "x": 4067.9956639910797,
+      "z": 493.94591756646037,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-150",
+      "x": 4327.664658590993,
+      "z": -187.09035702441534,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-151",
+      "x": 4070.704417547541,
+      "z": -187.02527913526336,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-156",
+      "x": 4327.742335846137,
+      "z": -630.7232710615821,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-157",
+      "x": 4072.911014638506,
+      "z": -630.3904402293969,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-174",
+      "x": 4296.9215467155445,
+      "z": -1285.4786800868653,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-177",
+      "x": 4027.910026900231,
+      "z": -1318.979593087735,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-182",
+      "x": 4122.066482284773,
+      "z": -1669.2655524996517,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-184",
+      "x": 4099.167945084998,
+      "z": -1688.549462460753,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-197",
+      "x": 3463.235484435642,
+      "z": -2076.1918681341517,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-200",
+      "x": 3435.75216126011,
+      "z": -2403.7651378429964,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-205",
+      "x": 3203.0831251251693,
+      "z": -2329.3389379421073,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-207",
+      "x": 3174.075991175129,
+      "z": -2357.174551622509,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-209",
+      "x": 3111.16855035897,
+      "z": -2390.66951615945,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-222",
+      "x": 2667.7549295919766,
+      "z": -2732.181626802111,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-224",
+      "x": 2609.380402142928,
+      "z": -2726.620171901137,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-226",
+      "x": 2529.9792487956574,
+      "z": -2731.6446152916897,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-228",
+      "x": 2432.3486155779974,
+      "z": -2728.230658247235,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-230",
+      "x": 2319.476121101493,
+      "z": -2728.578153518207,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-234",
+      "x": 2059.900608837777,
+      "z": -2729.626230665574,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-236",
+      "x": 1919.1740762893985,
+      "z": -2732.826309880218,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-238",
+      "x": 1775.1421781674858,
+      "z": -2730.8513056543966,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-242",
+      "x": 1476.6726464305643,
+      "z": -2731.243558418658,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-244",
+      "x": 1334.517506320593,
+      "z": -2734.5677614672586,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-250",
+      "x": 982.3141380764179,
+      "z": -2726.9247729092262,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-252",
+      "x": 901.2235282004707,
+      "z": -2726.5207901068793,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-254",
+      "x": 843.9439441302989,
+      "z": -2729.323080496253,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-256",
+      "x": 828.9078544169187,
+      "z": -2732.7248123485074,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-258",
+      "x": 806.3761652967528,
+      "z": -2727.0644843342625,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-260",
+      "x": 709.1355653469712,
+      "z": -2727.0187315355374,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-264",
+      "x": 504.8292354927183,
+      "z": -2705.980974386207,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-266",
+      "x": 400.46308516682507,
+      "z": -2684.2686774643835,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-267",
+      "x": 467.7889210088062,
+      "z": -2428.0947550185897,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-269",
+      "x": 390.94680827591196,
+      "z": -2408.9220392873494,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-271",
+      "x": 328.1585055239372,
+      "z": -2372.903097186751,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-273",
+      "x": 302.17117665510307,
+      "z": -2353.691998242418,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-275",
+      "x": 268.86114317989666,
+      "z": -2330.508765955101,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-283",
+      "x": -134.33584610616205,
+      "z": -2019.0823958297774,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-288",
+      "x": -571.9340727088684,
+      "z": -1995.918118294483,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-290",
+      "x": -621.0842893614193,
+      "z": -1967.7111625778562,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-295",
+      "x": -614.5142049600502,
+      "z": -1677.796134356693,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-297",
+      "x": -754.7552206478998,
+      "z": -1661.4947457191652,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-299",
+      "x": -886.1191158937421,
+      "z": -1692.103103325298,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-300",
+      "x": -848.21422435965,
+      "z": -1963.857464570726,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-302",
+      "x": -851.7651740329767,
+      "z": -1970.798315693462,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-304",
+      "x": -902.4655751778834,
+      "z": -2004.3123106638732,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-311",
+      "x": -1380.5871344153873,
+      "z": -2011.7832269946032,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-314",
+      "x": -1456.8887176673093,
+      "z": -2383.615062051241,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-321",
+      "x": -1845.339261981471,
+      "z": -2336.825408890413,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-323",
+      "x": -1867.5363576892291,
+      "z": -2352.4546827258855,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-325",
+      "x": -1912.3938861281974,
+      "z": -2379.6872617349864,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-327",
+      "x": -1972.2784306135532,
+      "z": -2389.621979216328,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-349",
+      "x": -2843.617830685501,
+      "z": -2000.277747238831,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-354",
+      "x": -3308.8084222937946,
+      "z": -2040.5256473322795,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-356",
+      "x": -3417.879740322548,
+      "z": -1989.7172166029359,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-359",
+      "x": -3389.4194705443538,
+      "z": -1707.734446201443,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-361",
+      "x": -3475.82641456259,
+      "z": -1665.9328314840727,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-363",
+      "x": -3545.869480350244,
+      "z": -1629.4555519795056,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-365",
+      "x": -3601.0936819822514,
+      "z": -1608.3754763460204,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-370",
+      "x": -3888.661837485389,
+      "z": -1653.7919652903574,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-376",
+      "x": -4018.013759345337,
+      "z": -1350.2239856647418,
+      "type": "residenza bow-window",
+      "reference": 4
+    },
+    {
+      "id": "route-377",
+      "x": -3823.2939330649783,
+      "z": -1308.193430444831,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-378",
+      "x": -4042.6800171223567,
+      "z": -1248.3744228879655,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-398",
+      "x": -4040.4938705291006,
+      "z": -614.2604240978062,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-404",
+      "x": -4007.0914993557003,
+      "z": -210.45042854677274,
+      "type": "hotel terrazzato",
+      "reference": 2
+    },
+    {
+      "id": "route-414",
+      "x": -3935.0776860384008,
+      "z": 542.5817185228731,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-420",
+      "x": -3900.445608783528,
+      "z": 916.1649123131319,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-426",
+      "x": -3867.9067607255674,
+      "z": 1267.379398028775,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-427",
+      "x": -3603.1681426033156,
+      "z": 1241.2315702090466,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-432",
+      "x": -3836.36123209785,
+      "z": 1572.919595278713,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-433",
+      "x": -3572.6755003703515,
+      "z": 1546.0227271554922,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-435",
+      "x": -3570.7175233617254,
+      "z": 1634.153253301655,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-443",
+      "x": -3536.8042696904217,
+      "z": 1888.4330320840022,
+      "type": "mercato coperto",
+      "reference": 5
+    },
+    {
+      "id": "route-445",
+      "x": -3532.1172712004404,
+      "z": 1923.5293954975748,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-447",
+      "x": -3531.917756387121,
+      "z": 1970.5757097226972,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-457",
+      "x": -3342.035349417611,
+      "z": 2273.580213454917,
+      "type": "uffici bronzo e vetro",
+      "reference": 1
+    },
+    {
+      "id": "route-459",
+      "x": -3277.7964421450447,
+      "z": 2319.739520841855,
+      "type": "atelier terracotta",
+      "reference": 3
+    },
+    {
+      "id": "route-468",
+      "x": -2909.9654085748316,
+      "z": 2705.372757674396,
+      "type": "residenza classica",
+      "reference": 0
+    },
+    {
+      "id": "route-470",
+      "x": -2809.3759838966203,
+      "z": 2710.4766590442046,
+      "type": "hotel terrazzato",
+      "reference": 2
+    }
+  ]
+}
